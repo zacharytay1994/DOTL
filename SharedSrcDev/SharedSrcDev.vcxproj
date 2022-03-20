@@ -147,10 +147,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\SharedSrc\NetworkWrapper\NetworkCommands.cpp" />
     <ClCompile Include="..\SharedSrc\SFMLWrapper\SFMLWrapper.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\SharedSrc\NetworkWrapper\NetworkCommands.h" />
     <ClInclude Include="..\SharedSrc\NetworkWrapper\NetworkProcess.h" />
     <ClInclude Include="..\SharedSrc\SFMLWrapper\SFMLWrapper.h" />
   </ItemGroup>

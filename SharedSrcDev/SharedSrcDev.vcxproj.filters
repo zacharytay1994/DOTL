@@ -21,12 +21,18 @@
     <ClCompile Include="..\SharedSrc\SFMLWrapper\SFMLWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\SharedSrc\NetworkWrapper\NetworkCommands.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SharedSrc\NetworkWrapper\NetworkProcess.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\SharedSrc\SFMLWrapper\SFMLWrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SharedSrc\NetworkWrapper\NetworkCommands.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

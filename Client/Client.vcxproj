@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\SharedSrc\NetworkWrapper\NetworkCommands.cpp" />
     <ClCompile Include="..\SharedSrc\SFMLWrapper\SFMLWrapper.cpp" />
     <ClCompile Include="ClientMain.cpp" />
     <ClCompile Include="src\ClientProcess.cpp" />

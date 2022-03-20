@@ -6,10 +6,12 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
+#include <unordered_map>
+
+#include "../ServerProcess.h"
 
 #pragma comment(lib, "Ws2_32.lib")
 
-#include "../ServerProcess.h"
 
 namespace DOTL
 {
@@ -20,14 +22,75 @@ namespace DOTL
 		pNetworkProcess		server_process_;
 	};
 
+	BOOL WINAPI ClientThread ( LPVOID lpData );
+
 	struct ServerInstance_WinSock2
 	{
-		ServerInstance_WinSock2 ( char const* serverIPAddress , int serverPort , pNetworkProcess serverProcess );
+		ServerInstance_WinSock2 ( char const* serverIPAddress , int serverPort , int maxClients );
 		~ServerInstance_WinSock2 ();
 
-		void Update ();
+		template <typename T>
+		void Update ()
+		{
+			std::cout << "## Listening from " << server_ip_address_ << " on port " << server_port_ << " ..." << std::endl;
+			// Start the infinite loop
+			while ( true )
+			{
+				// As the socket is in listen mode there is a connection request pending.
+				// Calling accept( ) will succeed and return the socket for the request.
+				SOCKET hClientSocket;
+				struct sockaddr_in clientAddr;
+				int nSize = sizeof ( clientAddr );
+
+				hClientSocket = accept ( server_socket_ , ( struct sockaddr* ) &clientAddr , &nSize );
+				if ( hClientSocket == INVALID_SOCKET )
+				{
+					std::cout << "accept( ) failed" << std::endl;
+				}
+				else if ( connected_clients_ < max_clients_ )
+				{
+					HANDLE			hClientThread;
+					DWORD			dwThreadId;
+
+					client_infos_.emplace_back ();
+					client_infos_.back ().client_address_ = clientAddr;
+					client_infos_.back ().client_socket_ = hClientSocket;
+					client_infos_.back ().server_process_ = std::make_shared<T> ( this );
+
+					std::cout << "## Client connected from " << inet_ntoa ( clientAddr.sin_addr ) << std::endl;
+
+					// Start the client thread
+					hClientThread = CreateThread ( NULL , 0 ,
+						( LPTHREAD_START_ROUTINE ) ClientThread ,
+						( LPVOID ) &client_infos_.back () , 0 , &dwThreadId );
+					if ( hClientThread == NULL )
+					{
+						std::cout << "## Unable to create client thread" << std::endl;
+					}
+					else
+					{
+						CloseHandle ( hClientThread );
+					}
+
+					client_infos_.back ().server_process_->Initialize ( hClientSocket );
+					++connected_clients_;
+				}
+				else
+				{
+					std::string full_server_message { "## The server is full." };
+					NetworkPacket packet;
+					packet.type_ = PACKET_TYPE::MESSAGE;
+					memcpy ( packet.buffer_ , full_server_message.c_str () , full_server_message.size () );
+					NetworkSend ( hClientSocket , packet );
+				}
+			}
+		}
 
 		bool SetupSuccess ();
+
+		std::unordered_map<std::string , SOCKET> const& GetClients () const;
+		void RegisterPlayer ( char const* name , SOCKET socket );
+		void ErasePlayer ( std::string const& name );
 
 	private:
 		SOCKET			server_socket_;
@@ -35,10 +98,14 @@ namespace DOTL
 		int				server_port_;
 		pNetworkProcess	server_process_;
 
+		std::vector<ClientInfo> client_infos_;
+
 		bool			setup_success_ { false };
+		int const		max_clients_ { 0 };
+		int				connected_clients_ { 0 };
+
+		std::unordered_map<std::string , SOCKET> clients_;
 
 		bool InitWinSock2_0 ();
 	};
-
-	BOOL WINAPI ClientThread ( LPVOID lpData );
 }

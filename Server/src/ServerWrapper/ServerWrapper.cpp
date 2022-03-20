@@ -2,11 +2,11 @@
 
 namespace DOTL
 {
-	ServerInstance_WinSock2::ServerInstance_WinSock2 ( char const* serverIPAddress , int serverPort , pNetworkProcess serverProcess )
+	ServerInstance_WinSock2::ServerInstance_WinSock2 ( char const* serverIPAddress , int serverPort , int maxClients )
 		:
 		server_ip_address_ ( serverIPAddress ) ,
 		server_port_ ( serverPort ) ,
-		server_process_ ( serverProcess )
+		max_clients_ ( maxClients )
 	{
 		if ( !InitWinSock2_0 () )
 		{
@@ -54,9 +54,9 @@ namespace DOTL
 			return;
 		}
 
-		setup_success_ = true;
+		client_infos_.reserve ( max_clients_ );
 
-		serverProcess->Initialize ( server_socket_ );
+		setup_success_ = true;
 	}
 
 	ServerInstance_WinSock2::~ServerInstance_WinSock2 ()
@@ -65,54 +65,24 @@ namespace DOTL
 		WSACleanup ();
 	}
 
-	void ServerInstance_WinSock2::Update ()
-	{
-		std::cout << "Listening on port " << server_port_ << " ..." << std::endl;
-		// Start the infinite loop
-		while ( true )
-		{
-			// As the socket is in listen mode there is a connection request pending.
-			// Calling accept( ) will succeed and return the socket for the request.
-			SOCKET hClientSocket;
-			struct sockaddr_in clientAddr;
-			int nSize = sizeof ( clientAddr );
-
-			hClientSocket = accept ( server_socket_ , ( struct sockaddr* ) &clientAddr , &nSize );
-			if ( hClientSocket == INVALID_SOCKET )
-			{
-				std::cout << "accept( ) failed" << std::endl;
-			}
-			else
-			{
-				HANDLE hClientThread;
-				struct ClientInfo clientInfo;
-				DWORD dwThreadId;
-
-				clientInfo.client_address_ = clientAddr;
-				clientInfo.client_socket_ = hClientSocket;
-				clientInfo.server_process_ = server_process_;
-
-				std::cout << "Client connected from " << inet_ntoa ( clientAddr.sin_addr ) << std::endl;
-
-				// Start the client thread
-				hClientThread = CreateThread ( NULL , 0 ,
-					( LPTHREAD_START_ROUTINE ) ClientThread ,
-					( LPVOID ) &clientInfo , 0 , &dwThreadId );
-				if ( hClientThread == NULL )
-				{
-					std::cout << "Unable to create client thread" << std::endl;
-				}
-				else
-				{
-					CloseHandle ( hClientThread );
-				}
-			}
-		}
-	}
-
 	bool ServerInstance_WinSock2::SetupSuccess ()
 	{
 		return setup_success_;
+	}
+
+	std::unordered_map<std::string , SOCKET> const& ServerInstance_WinSock2::GetClients () const
+	{
+		return clients_;
+	}
+
+	void ServerInstance_WinSock2::RegisterPlayer ( char const* name , SOCKET socket )
+	{
+		clients_[ name ] = socket;
+	}
+
+	void ServerInstance_WinSock2::ErasePlayer ( std::string const& name )
+	{
+		clients_.erase ( name );
 	}
 
 	bool ServerInstance_WinSock2::InitWinSock2_0 ()
@@ -136,7 +106,7 @@ namespace DOTL
 		{
 			pClientInfo->server_process_->Update ( client_socket , connected );
 		}
-
+		std::cout << "## Thread terminated." << std::endl;
 		return TRUE;
 	}
 }

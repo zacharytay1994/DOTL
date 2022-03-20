@@ -36,7 +36,7 @@ namespace DOTL
 		serverAddr.sin_port = htons ( static_cast< u_short >( server_port_ ) );
 
 		// Connect to the server
-		if ( connect ( client_socket_ , ( struct sockaddr* ) &serverAddr , sizeof ( serverAddr ) ) < 0 )
+		if ( connect ( client_socket_ , ( struct sockaddr* ) &serverAddr , sizeof ( serverAddr ) ) != 0 )
 		{
 			std::cerr << "Unable to connect to " << server_ip_address_ << " on port " << server_port_ << std::endl;
 			closesocket ( client_socket_ );
