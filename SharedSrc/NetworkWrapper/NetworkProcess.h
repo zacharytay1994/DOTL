@@ -7,6 +7,7 @@
 #include <string>
 
 #include "NetworkCommands.h"
+#include "../GameData/GameData.h"
 
 namespace DOTL
 {

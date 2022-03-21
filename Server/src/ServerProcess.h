@@ -9,15 +9,27 @@
 
 namespace DOTL
 {
+	struct ClientMapInfo
+	{
+		SOCKET		socket_;
+		std::string username_;
+		bool		spawned_ { false };
+	};
+
+	using CLIENT_MAP = std::unordered_map<uint16_t , ClientMapInfo>;
+
 	struct ServerInstance_WinSock2;
 	struct ServerProcess : public NetworkProcess
 	{
-		using CLIENT_MAP = std::unordered_map<std::string , SOCKET>;
-
 		ServerProcess ( ServerInstance_WinSock2* serverInstance );
 
 		virtual void Initialize ( SOCKET clientSocket ) override;
 		virtual void Update ( SOCKET clientSocket , bool& connected ) override;
+
+	private:
+		uint16_t id_ { 0 };
+		std::string username_ { "" };
+		ServerInstance_WinSock2* const server_instance_;
 
 		template <typename...ARGS>
 		std::string FormatNamedMessage ( char const* name , ARGS...args ) const
@@ -40,9 +52,11 @@ namespace DOTL
 		{
 			for ( auto const& client : clients )
 			{
-				SendNamedMessage ( name , client.second , args... );
+				SendNamedMessage ( name , client.second.socket_ , args... );
 			}
 		}
+
+		void SendNetworkPacketToAll ( NetworkPacket const& packet );
 
 		template <typename...ARGS>
 		void ServerLog ( char status , ARGS...args ) const
@@ -52,8 +66,8 @@ namespace DOTL
 			std::cout << std::endl;
 		}
 
-	private:
-		std::string username_ { "" };
-		ServerInstance_WinSock2* const server_instance_;
+		void SyncGameDataToClient ( SOCKET clientSocket );
+
+		// ENTITY CREATION FUNCTIONS
 	};
 }

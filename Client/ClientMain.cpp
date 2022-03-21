@@ -18,7 +18,7 @@ int main ()
 	_CrtSetReportMode ( _CRT_WARN , _CRTDBG_MODE_DEBUG );
 #endif
 
-	std::shared_ptr<DOTL::SFMLProcess> process = std::make_shared<DOTL::SFMLProcess> ( 1600 , 900 , "Client" );
+	std::shared_ptr<DOTL::SFMLProcess> process = std::make_shared<DOTL::SFMLProcess> ( 1200 , 1200 , "Client" );
 	DOTL::ClientInstance_WinSock2 client_instance ( "192.168.1.117" , 5050 , process );
 
 	if ( !client_instance.SetupSuccess () )

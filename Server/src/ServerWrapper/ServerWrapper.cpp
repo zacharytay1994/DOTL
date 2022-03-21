@@ -70,19 +70,29 @@ namespace DOTL
 		return setup_success_;
 	}
 
-	std::unordered_map<std::string , SOCKET> const& ServerInstance_WinSock2::GetClients () const
+	std::unordered_map<uint16_t , ClientMapInfo> const& ServerInstance_WinSock2::GetClients () const
 	{
 		return clients_;
 	}
 
-	void ServerInstance_WinSock2::RegisterPlayer ( char const* name , SOCKET socket )
+	uint16_t ServerInstance_WinSock2::RegisterPlayer ( char const* name , SOCKET socket )
 	{
-		clients_[ name ] = socket;
+		clients_[ ++client_ids_ ] = { socket , name };
+		return client_ids_;
 	}
 
-	void ServerInstance_WinSock2::ErasePlayer ( std::string const& name )
+	void ServerInstance_WinSock2::ErasePlayer ( uint16_t id )
 	{
-		clients_.erase ( name );
+		if ( clients_.find ( id ) != clients_.end () )
+		{
+			clients_.erase ( id );
+			--connected_clients_;
+		}
+	}
+
+	ClientMapInfo& ServerInstance_WinSock2::GetClientInfo ( uint16_t id )
+	{
+		return clients_.at ( id );
 	}
 
 	bool ServerInstance_WinSock2::InitWinSock2_0 ()

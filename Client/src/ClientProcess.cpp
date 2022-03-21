@@ -1,6 +1,7 @@
 #include "ClientProcess.h"
 
 #include <iomanip>
+#include <sstream>
 
 namespace DOTL
 {
@@ -19,7 +20,10 @@ namespace DOTL
 
 	void SFMLProcess::Update ( SOCKET clientSocket , bool& connected )
 	{
-		sfml_instance_.Update ();
+		while ( sfml_instance_.IsOpen () )
+		{
+			sfml_instance_.Update ( game_data_ , player_username_ );
+		}
 
 		NetworkPacket packet ( NETWORK_COMMAND::QUIT );
 		NetworkSend ( clientSocket , packet );
@@ -51,6 +55,7 @@ namespace DOTL
 					std::cout << packet.buffer_ << std::endl;
 					break;
 				case ( PACKET_TYPE::COMMAND ):
+				{
 					NETWORK_COMMAND i = static_cast< NETWORK_COMMAND >( *reinterpret_cast< int* >( packet.buffer_ ) );
 					switch ( i )
 					{
@@ -59,6 +64,41 @@ namespace DOTL
 						break;
 					}
 					break;
+				}
+
+				/* ______________________________________________________________________
+					RECEIVE CREATE PACKET FROM SERVER - Create the entity on client side
+				*/
+				case ( PACKET_TYPE::CREATE ):
+				{
+					game_data_.AddEntity ( *reinterpret_cast< NetworkEntity* >( packet.buffer_ ) );
+					break;
+				}
+
+				case ( PACKET_TYPE::ASSIGN_PLAYER ):
+				{
+					player_id_ = *reinterpret_cast< uint16_t* >( packet.buffer_ );
+					player_username_ = packet.buffer_ + sizeof ( uint16_t );
+					break;
+				}
+
+				/* ______________________________________________________________________
+					SYNC ENTITIES FROM SERVER WHEN RECEIVING THIS COMMAND
+				*/
+				case ( PACKET_TYPE::SYNC_ENTITY ):
+				{
+					SyncGameDataFromServer ( packet );
+					break;
+				}
+
+				/* ______________________________________________________________________
+					SYNC PLAYER NAMES FROM THE SERVER
+				*/
+				case ( PACKET_TYPE::SYNC_PLAYERNAME ):
+				{
+					game_data_.player_names_[ *reinterpret_cast< uint16_t* >( packet.buffer_ ) ] = packet.buffer_ + sizeof ( uint16_t );
+					break;
+				}
 				}
 
 				packets_.pop ();
@@ -77,15 +117,95 @@ namespace DOTL
 				// process client side commands
 				if ( input_string_[ 0 ] == '/' )
 				{
-					if ( input_string_.size () > 1 )
+					std::string check;
+					std::stringstream command_string;
+					command_string << input_string_;
+					command_string >> check;
+					// displays all players on the server
+					if ( check == "/serverplayers" )
 					{
-						switch ( input_string_[ 1 ] )
+						// get players command
+						NetworkSend ( clientSocket , NetworkPacket ( NETWORK_COMMAND::PLAYERS ) );
+					}
+					// displays all players syncs on client
+					if ( check == "/localplayers" )
+					{
+						std::cout << "PLAYERS IN LOBBY:" << std::endl; 
+						for ( auto const& player : game_data_.player_names_ )
 						{
-						case ( 'p' ):
-							// get players command
-							NetworkSend ( clientSocket , NetworkPacket ( NETWORK_COMMAND::PLAYERS ) );
-							break;
+							std::cout << "- " << player.second << " , EntityID: " << player.first << std::endl;
 						}
+					}
+					// create a new entity
+					else if ( check == "/create" )
+					{
+						bool valid { false };
+						NetworkEntity entity;
+						// get type of enemy
+						command_string >> check;
+						if ( check == "minion" )
+						{
+							entity.type_ = ET::MINION;
+							valid = true;
+						}
+						else if ( check == "tower" )
+						{
+							entity.type_ = ET::TOWER;
+							valid = true;
+						}
+						else if ( check == "bullet" )
+						{
+							entity.type_ = ET::BULLET;
+							valid = true;
+						}
+
+						if ( valid )
+						{
+							float x , y;
+							command_string >> x >> y;
+							entity.SetPosition ( x , y );
+							NetworkSend ( clientSocket , NetworkPacket ( entity ) );
+						}
+					}
+					// print snapshot of all entities
+					else if ( check == "/localsnapshot" )
+					{
+						std::cout << "LOCAL ENTITY SNAPSHOT:" << std::endl;
+						for ( auto i = 0; i < game_data_.entities_.size (); ++i )
+						{
+							NetworkEntity& entity = game_data_.entities_[ i ];
+							std::cout << "-" << std::setw ( 5 ) << i << "." << std::setw ( 0 );
+							// if active entity
+							if ( entity.id_ > 0 )
+							{
+								std::cout << "[" << entity.id_ << "]";
+								switch ( entity.type_ )
+								{
+								case ( ET::MINION ):
+									std::cout << " minion (";
+									break;
+								case ( ET::TOWER ):
+									std::cout << " tower (";
+									break;
+								case ( ET::BULLET ):
+									std::cout << " bullet (";
+									break;
+								case ( ET::PLAYER ):
+									std::cout << " player (";
+									break;
+								}
+								std::cout << entity.GetData ( ED::POS_X ) << " , " << entity.GetData ( ED::POS_Y ) << ")";
+							}
+							else
+							{
+								std::cout << " inactive.";
+							}
+							std::cout << std::endl;
+						}
+					}
+					else if ( check == "/serversnapshot" )
+					{
+
 					}
 				}
 				// send message as string
@@ -93,6 +213,23 @@ namespace DOTL
 				{
 					NetworkSend ( clientSocket , NetworkPacket ( input_string_.c_str () ) );
 				}
+			}
+		}
+	}
+
+	void SFMLProcess::SyncGameDataFromServer ( NetworkPacket const& packet )
+	{
+		int entity_size = static_cast< int >( sizeof ( NetworkEntity ) );
+		int entities_per_packed_buffer = MAX_DATA_SIZE / entity_size;
+
+		NetworkEntity const* entity;
+		unsigned int number_of_entities = *reinterpret_cast< unsigned int const* >( packet.buffer_ );
+		for ( int i = 0; i < number_of_entities; ++i )
+		{
+			entity = reinterpret_cast< NetworkEntity const* >( packet.buffer_ + ( i * entity_size ) + 4 );
+			if ( entity->id_ > 0 )
+			{
+				game_data_.AddEntity ( *entity );
 			}
 		}
 	}

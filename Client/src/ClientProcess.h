@@ -2,6 +2,7 @@
 
 #include "../../SharedSrc/SFMLWrapper/SFMLWrapper.h"
 #include "../../SharedSrc/NetworkWrapper/NetworkProcess.h"
+#include "../../SharedSrc/GameData/GameData.h"
 
 #include <memory>
 #include <thread>
@@ -16,16 +17,19 @@ namespace DOTL
 		virtual void Initialize ( SOCKET clientSocket ) override;
 		virtual void Update ( SOCKET clientSocket , bool& connected ) override;
 
-		void NetworkThreadUpdate ( SOCKET clientSocket );
-		void InputThreadUpdate ( SOCKET clientSocket );
-
 	private:
 		SFMLInstance	sfml_instance_;
 		std::thread		network_thread_;
 		std::thread		input_thread_;
 		bool			network_connected_ { false };
 
-		// input 
-		bool			reading_input_ { false };
+		uint16_t		player_id_ { 0 };
+		std::string		player_username_ { "UNASSIGNED" };
+		GameData		game_data_;
+
+		void NetworkThreadUpdate ( SOCKET clientSocket );
+		void InputThreadUpdate ( SOCKET clientSocket );
+
+		void SyncGameDataFromServer ( NetworkPacket const& packet );
 	};
 }

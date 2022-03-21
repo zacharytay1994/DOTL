@@ -19,6 +19,22 @@ namespace DOTL
 		memcpy ( buffer_ , &i_command , sizeof ( int ) );
 	}
 
+	NetworkPacket::NetworkPacket ( NetworkEntity const& entity )
+		:
+		type_ ( PACKET_TYPE::CREATE )
+	{
+		memcpy ( buffer_ , &entity , sizeof ( entity ) );
+	}
+
+	NetworkPacket::NetworkPacket ( uint16_t i , char const* playerName )
+		:
+		type_ ( PACKET_TYPE::ASSIGN_PLAYER )
+	{
+		memcpy ( buffer_ , &i , sizeof ( uint16_t ) );
+		std::string temp { playerName };
+		memcpy ( buffer_ + sizeof ( uint16_t ) , playerName , temp.size () );
+	}
+
 	int NetworkReceive ( SOCKET socket , char* buffer , int size )
 	{
 		return recv ( socket , buffer , size , 0 );
@@ -41,11 +57,11 @@ namespace DOTL
 		}
 	}
 
-	void NetworkSendAll ( std::unordered_map<std::string , SOCKET> const& clients , NetworkPacket const& packet )
+	/*void NetworkSendAll ( std::unordered_map<std::string , SOCKET> const& clients , NetworkPacket const& packet )
 	{
 		for ( auto const& client : clients )
 		{
 			NetworkSend ( client.second , packet );
 		}
-	}
+	}*/
 }

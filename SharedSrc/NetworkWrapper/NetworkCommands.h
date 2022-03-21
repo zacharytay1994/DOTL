@@ -8,6 +8,8 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
+#include "../GameData/GameData.h"
+
 namespace DOTL
 {
 	static constexpr int MAX_DATA_SIZE = 1024;
@@ -16,13 +18,17 @@ namespace DOTL
 	{
 		MESSAGE ,
 		COMMAND ,
+		CREATE ,
+		SYNC_ENTITY ,
+		SYNC_PLAYERNAME ,
+		ASSIGN_PLAYER ,
 		COUNT
 	};
 
 	enum class NETWORK_COMMAND
 	{
 		QUIT = 0 ,
-		PLAYERS ,
+		PLAYERS
 	};
 
 	struct NetworkPacket
@@ -32,6 +38,8 @@ namespace DOTL
 		NetworkPacket () = default;
 		NetworkPacket ( const char* message );
 		NetworkPacket ( NETWORK_COMMAND command );
+		NetworkPacket ( NetworkEntity const& entity );
+		NetworkPacket ( uint16_t i , char const* playerName );
 	};
 
 	static constexpr int PACKET_SIZE = sizeof ( NetworkPacket );
@@ -40,5 +48,5 @@ namespace DOTL
 
 	void NetworkSend ( SOCKET socket , NetworkPacket const& packet );
 
-	void NetworkSendAll ( std::unordered_map<std::string , SOCKET> const& clients , NetworkPacket const& packet );
+	//void NetworkSendAll ( std::unordered_map<std::string , SOCKET> const& clients , NetworkPacket const& packet );
 }

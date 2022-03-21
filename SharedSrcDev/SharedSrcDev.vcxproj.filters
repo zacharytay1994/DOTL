@@ -35,5 +35,8 @@
     <ClInclude Include="..\SharedSrc\NetworkWrapper\NetworkCommands.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\SharedSrc\GameData\GameData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -9,6 +9,7 @@
 #include <unordered_map>
 
 #include "../ServerProcess.h"
+#include "../../../SharedSrc/GameData/GameData.h"
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -88,9 +89,13 @@ namespace DOTL
 
 		bool SetupSuccess ();
 
-		std::unordered_map<std::string , SOCKET> const& GetClients () const;
-		void RegisterPlayer ( char const* name , SOCKET socket );
-		void ErasePlayer ( std::string const& name );
+		CLIENT_MAP const& GetClients () const;
+		uint16_t RegisterPlayer ( char const* name , SOCKET socket );
+		void ErasePlayer ( uint16_t id );
+		ClientMapInfo& GetClientInfo ( uint16_t id );
+
+		GameData		game_data_;
+		uint16_t		player_ids_ { 0 };
 
 	private:
 		SOCKET			server_socket_;
@@ -104,7 +109,8 @@ namespace DOTL
 		int const		max_clients_ { 0 };
 		int				connected_clients_ { 0 };
 
-		std::unordered_map<std::string , SOCKET> clients_;
+		uint16_t		client_ids_ { 0 };	// note: client ids start at 1, 0 is reserved for the server
+		CLIENT_MAP		clients_;
 
 		bool InitWinSock2_0 ();
 	};

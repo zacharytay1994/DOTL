@@ -5,6 +5,8 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 
+#include "../GameData/GameData.h"
+
 #include <memory>
 
 namespace DOTL
@@ -13,10 +15,17 @@ namespace DOTL
 	{
 		SFMLInstance ( int windowWidth , int windowHeight , char const* name );
 
-		void Update ();
+		void Update ( GameData const& data , std::string const& username );
+
+		bool IsOpen ();
 
 	private:
 		std::shared_ptr<sf::RenderWindow> window_;
+		sf::Font font_;
+		sf::Text text_;
+
+		static constexpr int font_size_ { 18 };
+		static constexpr int font_offset_ { 25 };
 	};
 
 	struct SFMLSprite
