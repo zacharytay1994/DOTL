@@ -18,10 +18,57 @@ namespace DOTL
 		input_thread_ = std::thread ( &SFMLProcess::InputThreadUpdate , this , clientSocket );
 	}
 
-	void SFMLProcess::Update ( SOCKET clientSocket , bool& connected )
+	void SFMLProcess::Update ( SOCKET clientSocket , bool& connected , double unusedDT )
 	{
+		double dt { 0.0 };
+		std::chrono::time_point<std::chrono::high_resolution_clock> time_stamp;
+		double time { 0.0 };
+		double sync_interval { 0.05 };
+
 		while ( sfml_instance_.IsOpen () )
 		{
+			auto current_time = std::chrono::high_resolution_clock::now ();
+			auto duration = std::chrono::duration_cast< std::chrono::nanoseconds >( current_time - time_stamp );
+			dt = static_cast< double >( duration.count () ) / 1000'000'000.0;
+			// stall to 60 fps
+			while ( dt < 0.02 )
+			{
+				auto new_current = std::chrono::high_resolution_clock::now ();
+				dt += static_cast< double >( std::chrono::duration_cast< std::chrono::nanoseconds >( new_current - current_time ).count () ) / 1000'000'000.0;
+				current_time = new_current;
+			}
+			time_stamp = current_time;
+
+			// poll events here
+			sfml_instance_.PollMouseEvents ( mouse_data_ );
+
+			// do player logic here
+			// player update
+			// check if player id is valid and exist
+			if ( game_data_.player_names_.find ( player_id_ ) != game_data_.player_names_.end () &&
+				player_id_ < game_data_.entities_.size () )
+			{
+				NetworkEntity& player = game_data_.entities_[ player_id_ ];
+
+				// set to vector code
+				UpdatePlayer ( dt , player );
+
+				// sync - pass to server the player position
+				if ( time > sync_interval )
+				{
+					time = 0.0;
+					NetworkPacket packet;
+					packet.type_ = PACKET_TYPE::SYNC_ENTITY;
+					memcpy ( packet.buffer_ , &player , sizeof ( NetworkEntity ) );
+					NetworkSend ( clientSocket , packet ); // error here
+				}
+				else
+				{
+					time += dt;
+				}
+			}
+
+			// sfml render
 			sfml_instance_.Update ( game_data_ , player_username_ );
 		}
 
@@ -130,7 +177,7 @@ namespace DOTL
 					// displays all players syncs on client
 					if ( check == "/localplayers" )
 					{
-						std::cout << "PLAYERS IN LOBBY:" << std::endl; 
+						std::cout << "PLAYERS IN LOBBY:" << std::endl;
 						for ( auto const& player : game_data_.player_names_ )
 						{
 							std::cout << "- " << player.second << " , EntityID: " << player.first << std::endl;
@@ -231,6 +278,25 @@ namespace DOTL
 			{
 				game_data_.AddEntity ( *entity );
 			}
+		}
+	}
+
+	void SFMLProcess::UpdatePlayer ( double dt , NetworkEntity& player )
+	{
+		float player_speed { 1000.0f };
+		// get direction vector between player and mouse
+		sf::Vector2f dir ( mouse_data_.x_ - player.GetData ( ED::POS_X ) , mouse_data_.y_ - player.GetData ( ED::POS_Y ) );
+		// normalize direction
+		float length = sqrt ( dir.x * dir.x + dir.y * dir.y );
+		dir /= length;
+		// set velocity of player = speed * dir
+		player.SetVelocity ( dir.x * player_speed , dir.y * player_speed );
+
+		// move to mouse position
+		// calculate distance away
+		if ( length > player_speed * dt * 2.0f )
+		{
+			player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * dt , player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * dt );
 		}
 	}
 }

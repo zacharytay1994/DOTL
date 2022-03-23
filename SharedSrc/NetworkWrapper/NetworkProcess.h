@@ -16,7 +16,7 @@ namespace DOTL
 		NetworkProcess () = default;
 
 		virtual void Initialize ( SOCKET socket ) = 0;
-		virtual void Update ( SOCKET socket , bool& terminate ) = 0;
+		virtual void Update ( SOCKET socket , bool& terminate , double dt ) = 0;
 
 	protected:
 		// buffer to store and parse received data

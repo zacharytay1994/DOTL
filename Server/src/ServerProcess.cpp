@@ -17,7 +17,7 @@ namespace DOTL
 		NetworkSend ( clientSocket , NetworkPacket ( "Welcome, enter your DOTL username!" ) );
 	}
 
-	void ServerProcess::Update ( SOCKET clientSocket , bool& connected )
+	void ServerProcess::Update ( SOCKET clientSocket , bool& connected , double dt )
 	{
 		ReceiveBuffer ( clientSocket );
 
@@ -55,7 +55,7 @@ namespace DOTL
 
 					NetworkEntity entity;
 					srand ( time ( NULL ) );
-					entity.SetPosition ( rand() % 1200 , rand() % 1200 );
+					entity.SetPosition ( rand () % 1200 , rand () % 1200 );
 					entity.type_ = ET::PLAYER;
 					entity = server_instance_->game_data_.CreateEntity ( entity , id_ );
 
@@ -74,13 +74,13 @@ namespace DOTL
 					// resync player names database
 					for ( auto const& player : server_instance_->game_data_.player_names_ )
 					{
-						NetworkPacket name_packet = NetworkPacket ( player.first , player.second.c_str() );
+						NetworkPacket name_packet = NetworkPacket ( player.first , player.second.c_str () );
 						name_packet.type_ = PACKET_TYPE::SYNC_PLAYERNAME;
 						SendNetworkPacketToAll ( name_packet );
 					}
 
 					// bring this client up to date with the current server entities
-					SyncGameDataToClient ( clientSocket );
+					server_instance_->SyncGameDataToClient ( clientSocket );
 				}
 				// if username already established - forward messages to all clients
 				else
@@ -97,7 +97,7 @@ namespace DOTL
 				NETWORK_COMMAND i = static_cast< NETWORK_COMMAND >( *reinterpret_cast< int* >( packet.buffer_ ) );
 				switch ( i )
 				{
-				// 1. QUIT COMMAND
+					// 1. QUIT COMMAND
 
 				case ( NETWORK_COMMAND::QUIT ):
 					SendNamedMessage ( "SERVER" , server_instance_->GetClients () , username_ , " has left the server." );
@@ -112,7 +112,7 @@ namespace DOTL
 
 					break;
 
-				// 2. PLAYERS COMMAND
+					// 2. PLAYERS COMMAND
 
 				case ( NETWORK_COMMAND::PLAYERS ):
 				{
@@ -134,26 +134,6 @@ namespace DOTL
 					break;
 				}
 
-				// 3. SPAWN COMMAND
-
-				/*case ( NETWORK_COMMAND::SPAWN ):
-				{
-					if ( !server_instance_->GetClientInfo ( id_ ).spawned_ )
-					{
-						NetworkEntity entity;
-						entity.SetPosition ( 100.0f , 100.0f );
-						entity.type_ = ET::PLAYER;
-						entity = server_instance_->game_data_.CreateEntity ( entity , id_ );
-						SendNetworkPacketToAll ( NetworkPacket ( entity ) );
-						server_instance_->GetClientInfo ( id_ ).spawned_ = true;
-						NetworkSend ( clientSocket , NetworkPacket ( id_ , username_.c_str () ) );
-					}
-					else
-					{
-						SendNamedMessage ( "SERVER" , clientSocket , "Player entity already assigned to this user!" );
-					}
-					break;
-				}*/
 				}
 				break;
 			}
@@ -172,6 +152,19 @@ namespace DOTL
 				SendNetworkPacketToAll ( NetworkPacket ( entity ) );
 				break;
 			}
+
+			/* ______________________________________________________________________
+				HANDLE CREATE COMMANDS TO SYNC ENTITY 
+				:
+				USUALLY ONLY WHEN ITS THEIR PLAYER
+			*/
+			case ( PACKET_TYPE::SYNC_ENTITY ):
+			{
+				NetworkEntity* player = reinterpret_cast< NetworkEntity* >( packet.buffer_ );
+				// should do some validation but maybe later
+				server_instance_->game_data_.AddEntity ( *player );
+				break;
+			}
 			}
 
 			packets_.pop ();
@@ -184,43 +177,5 @@ namespace DOTL
 		{
 			NetworkSend ( client.second.socket_ , packet );
 		}
-	}
-
-	void ServerProcess::SyncGameDataToClient ( SOCKET clientSocket )
-	{
-		NetworkPacket packet;
-		packet.type_ = PACKET_TYPE::SYNC_ENTITY;
-		int entity_size = static_cast< int >( sizeof ( NetworkEntity ) );
-
-		// first 4 bytes are reserved for number of entities in the packet
-		int entities_per_packed_buffer = MAX_DATA_SIZE - 4 / entity_size;
-		int pack_iterations = static_cast< int >( server_instance_->game_data_.entities_.size () ) / entities_per_packed_buffer;
-		int i { 0 };
-		for ( int pack_iteration = 0; pack_iteration < pack_iterations; ++pack_iteration )
-		{
-			// 0 out buffer
-			memset ( packet.buffer_ , 0 , MAX_DATA_SIZE );
-			*reinterpret_cast< unsigned int* >( packet.buffer_ ) = entities_per_packed_buffer;
-			for ( int per_pack = 0; per_pack < entities_per_packed_buffer; ++per_pack )
-			{
-				memcpy ( packet.buffer_ + ( per_pack * entity_size ) + 4 , &server_instance_->game_data_.entities_[ i++ ] , entity_size );
-			}
-
-			// send packed packet
-			NetworkSend ( clientSocket , packet );
-		}
-
-		// send remaining entities in last packet
-		memset ( packet.buffer_ , 0 , MAX_DATA_SIZE );
-		int j;
-		for ( j = 0; i < server_instance_->game_data_.entities_.size (); ++i , ++j )
-		{
-			memcpy ( packet.buffer_ + ( j * entity_size ) + 4 , &server_instance_->game_data_.entities_[ i ] , entity_size );
-		}
-
-		// first 4 bytes for number of entities
-		*reinterpret_cast< unsigned int* >( packet.buffer_ ) = static_cast< unsigned int >( j );
-
-		NetworkSend ( clientSocket , packet );
 	}
 }

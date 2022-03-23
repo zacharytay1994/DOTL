@@ -19,7 +19,7 @@ namespace DOTL
 		}
 	}
 
-	void SFMLInstance::Update ( GameData const& data , std::string const& username )
+	void SFMLInstance::PollMouseEvents ( MouseEventData& med )
 	{
 		sf::Event sf_event;
 
@@ -29,8 +29,25 @@ namespace DOTL
 			{
 				window_->close ();
 			}
-		}
 
+			if ( sf_event.type == sf::Event::MouseButtonPressed )
+			{
+				med.pressed_ = true;
+				if ( sf_event.mouseButton.button == sf::Mouse::Left )
+				{
+					med.x_ = sf_event.mouseButton.x;
+					med.y_ = sf_event.mouseButton.y;
+				}
+			}
+			else
+			{
+				med.pressed_ = false;
+			}
+		}
+	}
+
+	void SFMLInstance::Update ( GameData& data , std::string const& username )
+	{
 		window_->clear ();
 
 		// draw all entities as circles

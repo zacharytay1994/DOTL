@@ -1,4 +1,5 @@
 #include "ClientWrapper.h"
+#include <chrono>
 
 namespace DOTL
 {
@@ -56,9 +57,10 @@ namespace DOTL
 	void ClientInstance_WinSock2::Update ()
 	{
 		bool connected { true };
+
 		while ( connected )
 		{
-			client_process_->Update ( client_socket_ , connected );
+			client_process_->Update ( client_socket_ , connected , 1.0 );
 		}
 	}
 

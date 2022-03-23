@@ -25,12 +25,16 @@ namespace DOTL
 		{
 			POS_X = 0 ,
 			POS_Y ,
+			VEL_X ,
+			VEL_Y ,
 			COUNT
 		};
 		float data[ static_cast< int >( DATA::COUNT ) ] =
 		{
-			0.0f,	// x 
-			0.0f	// y
+			0.0f,	// position x 
+			0.0f,	// position y
+			10.0f,	// velocity x
+			0.0f	// velocity y
 		};
 
 		float GetData ( DATA id ) const
@@ -42,6 +46,12 @@ namespace DOTL
 		{
 			data[ 0 ] = x;
 			data[ 1 ] = y;
+		}
+
+		void SetVelocity ( float x , float y )
+		{
+			data[ 2 ] = x;
+			data[ 3 ] = y;
 		}
 	};
 
@@ -100,6 +110,34 @@ namespace DOTL
 			}
 			entities_[ entity.id_ ] = entity;
 			return entities_[ entity.id_ ];
+		}
+
+		void Update ( float dt )
+		{
+			// Game entities logic update
+
+			for ( auto& entity : entities_ )
+			{
+				switch ( entity.type_ )
+				{
+				case ( ET::MINION ):
+				{
+					// update position with velocity
+					entity.SetPosition ( entity.GetData ( ED::POS_X ) + entity.GetData ( ED::VEL_X ) * dt , entity.GetData ( ED::POS_Y ) + entity.GetData ( ED::VEL_Y ) );
+					break;
+				}
+				case ( ET::TOWER ):
+				{
+
+					break;
+				}
+				case ( ET::BULLET ):
+				{
+
+					break;
+				}
+				}
+			}
 		}
 	};
 }

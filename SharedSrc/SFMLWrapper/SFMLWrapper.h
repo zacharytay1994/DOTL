@@ -11,11 +11,19 @@
 
 namespace DOTL
 {
+	struct MouseEventData
+	{
+		bool pressed_ { false };
+		float x_ , y_;
+	};
+
 	struct SFMLInstance
 	{
 		SFMLInstance ( int windowWidth , int windowHeight , char const* name );
 
-		void Update ( GameData const& data , std::string const& username );
+		void PollMouseEvents ( MouseEventData& med );
+
+		void Update ( GameData& data , std::string const& username );
 
 		bool IsOpen ();
 

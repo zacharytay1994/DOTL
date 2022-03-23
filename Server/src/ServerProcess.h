@@ -6,6 +6,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <iomanip>
+#include <chrono>
 
 namespace DOTL
 {
@@ -24,7 +25,7 @@ namespace DOTL
 		ServerProcess ( ServerInstance_WinSock2* serverInstance );
 
 		virtual void Initialize ( SOCKET clientSocket ) override;
-		virtual void Update ( SOCKET clientSocket , bool& connected ) override;
+		virtual void Update ( SOCKET clientSocket , bool& connected , double dt ) override;
 
 	private:
 		uint16_t id_ { 0 };
@@ -65,9 +66,5 @@ namespace DOTL
 			( ( std::cout << args ) , ... );
 			std::cout << std::endl;
 		}
-
-		void SyncGameDataToClient ( SOCKET clientSocket );
-
-		// ENTITY CREATION FUNCTIONS
 	};
 }

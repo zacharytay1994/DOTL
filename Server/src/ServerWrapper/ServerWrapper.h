@@ -7,6 +7,8 @@
 #include <string>
 #include <sstream>
 #include <unordered_map>
+#include <chrono>
+#include <thread>
 
 #include "../ServerProcess.h"
 #include "../../../SharedSrc/GameData/GameData.h"
@@ -23,7 +25,9 @@ namespace DOTL
 		pNetworkProcess		server_process_;
 	};
 
-	BOOL WINAPI ClientThread ( LPVOID lpData );
+	//BOOL WINAPI ClientThread ( LPVOID lpData );
+
+	void ModernClientThread ( ClientInfo* clientInfo );
 
 	struct ServerInstance_WinSock2
 	{
@@ -61,7 +65,7 @@ namespace DOTL
 					std::cout << "## Client connected from " << inet_ntoa ( clientAddr.sin_addr ) << std::endl;
 
 					// Start the client thread
-					hClientThread = CreateThread ( NULL , 0 ,
+					/*hClientThread = CreateThread ( NULL , 0 ,
 						( LPTHREAD_START_ROUTINE ) ClientThread ,
 						( LPVOID ) &client_infos_.back () , 0 , &dwThreadId );
 					if ( hClientThread == NULL )
@@ -71,7 +75,8 @@ namespace DOTL
 					else
 					{
 						CloseHandle ( hClientThread );
-					}
+					}*/
+					client_threads_.emplace_back ( std::thread ( ModernClientThread , &client_infos_.back () ) );
 
 					client_infos_.back ().server_process_->Initialize ( hClientSocket );
 					++connected_clients_;
@@ -85,6 +90,12 @@ namespace DOTL
 					NetworkSend ( hClientSocket , packet );
 				}
 			}
+
+			// join all client threads back
+			for ( auto& thread : client_threads_ )
+			{
+				thread.join ();
+			}
 		}
 
 		bool SetupSuccess ();
@@ -96,6 +107,8 @@ namespace DOTL
 
 		GameData		game_data_;
 		uint16_t		player_ids_ { 0 };
+
+		void SyncGameDataToClient ( SOCKET clientSocket );
 
 	private:
 		SOCKET			server_socket_;
@@ -112,6 +125,12 @@ namespace DOTL
 		uint16_t		client_ids_ { 0 };	// note: client ids start at 1, 0 is reserved for the server
 		CLIENT_MAP		clients_;
 
+		std::vector<std::thread> client_threads_;
+
 		bool InitWinSock2_0 ();
+
+		std::thread game_update_thread_;
+
+		void UpdateGameLogic ();
 	};
 }
