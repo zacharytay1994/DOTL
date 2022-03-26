@@ -1,5 +1,6 @@
 #include "ServerWrapper.h"
 #include <thread>
+#include <chrono>
 
 namespace DOTL
 {
@@ -118,7 +119,7 @@ namespace DOTL
 			*reinterpret_cast< unsigned int* >( packet.buffer_ ) = entities_per_packed_buffer;
 			for ( int per_pack = 0; per_pack < entities_per_packed_buffer; ++per_pack )
 			{
-				memcpy ( packet.buffer_ + ( per_pack * entity_size ) + 4 , &game_data_.entities_[ i++ ] , entity_size );
+				memcpy ( packet.buffer_ + ( per_pack * entity_size ) + 4 , &game_data_.GetEntity ( static_cast< uint16_t >( i++ ) ) , entity_size );
 			}
 
 			// send packed packet
@@ -130,13 +131,20 @@ namespace DOTL
 		int j;
 		for ( j = 0; i < game_data_.entities_.size (); ++i , ++j )
 		{
-			memcpy ( packet.buffer_ + ( j * entity_size ) + 4 , &game_data_.entities_[ i ] , entity_size );
+			memcpy ( packet.buffer_ + ( j * entity_size ) + 4 , &game_data_.GetEntity ( static_cast< uint16_t >( i ) ) , entity_size );
 		}
 
 		// first 4 bytes for number of entities
 		*reinterpret_cast< unsigned int* >( packet.buffer_ ) = static_cast< unsigned int >( j );
 
 		NetworkSend ( clientSocket , packet );
+
+		// send time stamp
+		uint64_t time_stamp = std::chrono::system_clock::now ().time_since_epoch () / std::chrono::milliseconds ( 1 );
+		NetworkPacket time_stamp_packet;
+		time_stamp_packet.type_ = PACKET_TYPE::TIME_STAMP;
+		memcpy ( time_stamp_packet.buffer_ , &time_stamp , sizeof ( uint64_t ) );
+		NetworkSend ( clientSocket , time_stamp_packet );
 	}
 
 	bool ServerInstance_WinSock2::InitWinSock2_0 ()
@@ -208,7 +216,7 @@ namespace DOTL
 			}
 			game_logic_time_stamp = current_time;
 
-			game_data_.Update ( dt );
+			game_data_.Update ( static_cast< float >( dt ) );
 
 			// sync game data at intervals
 

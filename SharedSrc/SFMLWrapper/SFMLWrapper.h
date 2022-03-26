@@ -23,7 +23,7 @@ namespace DOTL
 
 		void PollMouseEvents ( MouseEventData& med );
 
-		void Update ( GameData& data , std::string const& username );
+		void Update ( GameData& data );
 
 		bool IsOpen ();
 

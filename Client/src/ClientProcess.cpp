@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <sstream>
+#include <chrono>
 
 namespace DOTL
 {
@@ -20,6 +21,8 @@ namespace DOTL
 
 	void SFMLProcess::Update ( SOCKET clientSocket , bool& connected , double unusedDT )
 	{
+		UNREFERENCED_PARAMETER ( unusedDT );
+
 		double dt { 0.0 };
 		std::chrono::time_point<std::chrono::high_resolution_clock> time_stamp;
 		double time { 0.0 };
@@ -48,10 +51,10 @@ namespace DOTL
 			if ( game_data_.player_names_.find ( player_id_ ) != game_data_.player_names_.end () &&
 				player_id_ < game_data_.entities_.size () )
 			{
-				NetworkEntity& player = game_data_.entities_[ player_id_ ];
+				NetworkEntity& player = game_data_.GetEntity ( player_id_ );
 
 				// set to vector code
-				UpdatePlayer ( dt , player );
+				UpdatePlayer ( dt , player , game_data_.player_speed_ );
 
 				// sync - pass to server the player position
 				if ( time > sync_interval )
@@ -69,7 +72,7 @@ namespace DOTL
 			}
 
 			// sfml render
-			sfml_instance_.Update ( game_data_ , player_username_ );
+			sfml_instance_.Update ( game_data_ );
 		}
 
 		NetworkPacket packet ( NETWORK_COMMAND::QUIT );
@@ -146,6 +149,17 @@ namespace DOTL
 					game_data_.player_names_[ *reinterpret_cast< uint16_t* >( packet.buffer_ ) ] = packet.buffer_ + sizeof ( uint16_t );
 					break;
 				}
+
+				case ( PACKET_TYPE::TIME_STAMP ):
+				{
+					uint64_t old_time_stamp = game_data_.time_stamp_;
+					game_data_.time_stamp_ = *reinterpret_cast< uint64_t* >( packet.buffer_ );
+					if ( game_data_.time_stamp_ > 0 )
+					{
+						game_data_.sync_delta_time_ = static_cast< double >( game_data_.time_stamp_ - old_time_stamp ) * 0.001;
+					}
+					break;
+				}
 				}
 
 				packets_.pop ();
@@ -220,7 +234,7 @@ namespace DOTL
 						std::cout << "LOCAL ENTITY SNAPSHOT:" << std::endl;
 						for ( auto i = 0; i < game_data_.entities_.size (); ++i )
 						{
-							NetworkEntity& entity = game_data_.entities_[ i ];
+							NetworkEntity& entity = game_data_.GetEntity ( static_cast< uint16_t >( i ) );
 							std::cout << "-" << std::setw ( 5 ) << i << "." << std::setw ( 0 );
 							// if active entity
 							if ( entity.id_ > 0 )
@@ -267,36 +281,54 @@ namespace DOTL
 	void SFMLProcess::SyncGameDataFromServer ( NetworkPacket const& packet )
 	{
 		int entity_size = static_cast< int >( sizeof ( NetworkEntity ) );
-		int entities_per_packed_buffer = MAX_DATA_SIZE / entity_size;
 
 		NetworkEntity const* entity;
 		unsigned int number_of_entities = *reinterpret_cast< unsigned int const* >( packet.buffer_ );
-		for ( int i = 0; i < number_of_entities; ++i )
+		for ( unsigned int i = 0; i < number_of_entities; ++i )
 		{
 			entity = reinterpret_cast< NetworkEntity const* >( packet.buffer_ + ( i * entity_size ) + 4 );
 			if ( entity->id_ > 0 )
 			{
+				// do server reconciliation for player here
+				if ( entity->id_ == player_id_ )
+				{
+					// server reconciliation logic - for now no validation to sequence so it just 
+					// does not update the player data is the sequence number is outdated
+					if ( entity->sequence_ < game_data_.GetEntity ( player_id_ ).sequence_ )
+					{
+						// expected response from server
+						// do stuff with response, validation etc.
+
+						// ...
+					}
+				}
+				else
+				{
+					game_data_.AddEntity ( *entity );
+				}
 				game_data_.AddEntity ( *entity );
 			}
 		}
 	}
 
-	void SFMLProcess::UpdatePlayer ( double dt , NetworkEntity& player )
+	void SFMLProcess::UpdatePlayer ( double dt , NetworkEntity& player , float playerSpeed )
 	{
-		float player_speed { 1000.0f };
 		// get direction vector between player and mouse
 		sf::Vector2f dir ( mouse_data_.x_ - player.GetData ( ED::POS_X ) , mouse_data_.y_ - player.GetData ( ED::POS_Y ) );
 		// normalize direction
 		float length = sqrt ( dir.x * dir.x + dir.y * dir.y );
 		dir /= length;
 		// set velocity of player = speed * dir
-		player.SetVelocity ( dir.x * player_speed , dir.y * player_speed );
+		player.SetVelocity ( dir.x * playerSpeed , dir.y * playerSpeed );
 
 		// move to mouse position
 		// calculate distance away
-		if ( length > player_speed * dt * 2.0f )
+		if ( length > playerSpeed * dt * 0.5f )
 		{
-			player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * dt , player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * dt );
+			player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) , player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
 		}
+
+		// increment update sequence to be used in server reconciliation
+		++player.sequence_;
 	}
 }

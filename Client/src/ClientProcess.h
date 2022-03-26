@@ -34,6 +34,6 @@ namespace DOTL
 		void SyncGameDataFromServer ( NetworkPacket const& packet );
 
 		// player update code
-		void UpdatePlayer ( double dt , NetworkEntity& player );
+		void UpdatePlayer ( double dt , NetworkEntity& player , float playerSpeed );
 	};
 }

@@ -54,8 +54,8 @@ namespace DOTL
 				}
 				else if ( connected_clients_ < max_clients_ )
 				{
-					HANDLE			hClientThread;
-					DWORD			dwThreadId;
+					/*HANDLE			hClientThread;
+					DWORD			dwThreadId;*/
 
 					client_infos_.emplace_back ();
 					client_infos_.back ().client_address_ = clientAddr;

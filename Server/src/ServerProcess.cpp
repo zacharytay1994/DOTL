@@ -19,6 +19,8 @@ namespace DOTL
 
 	void ServerProcess::Update ( SOCKET clientSocket , bool& connected , double dt )
 	{
+		UNREFERENCED_PARAMETER ( dt );
+
 		ReceiveBuffer ( clientSocket );
 
 		// process all packets
@@ -54,8 +56,8 @@ namespace DOTL
 					// create player object in the game
 
 					NetworkEntity entity;
-					srand ( time ( NULL ) );
-					entity.SetPosition ( rand () % 1200 , rand () % 1200 );
+					srand ( static_cast< unsigned int >( time ( NULL ) ) );
+					entity.SetPosition ( static_cast< float >( rand () % 1200 ) , static_cast< float >( rand () % 1200 ) );
 					entity.type_ = ET::PLAYER;
 					entity = server_instance_->game_data_.CreateEntity ( entity , id_ );
 
@@ -66,8 +68,8 @@ namespace DOTL
 					// this is to assign the id and username to the client
 					// the constructor constructs a PACKET_TYPE::ASSIGN_PLAYER packet
 
-					NetworkPacket packet = NetworkPacket ( id_ , username_.c_str () );
-					NetworkSend ( clientSocket , packet );
+					NetworkPacket username_packet = NetworkPacket ( id_ , username_.c_str () );
+					NetworkSend ( clientSocket , username_packet );
 
 					server_instance_->game_data_.player_names_[ entity.id_ ] = username_;
 
@@ -154,7 +156,7 @@ namespace DOTL
 			}
 
 			/* ______________________________________________________________________
-				HANDLE CREATE COMMANDS TO SYNC ENTITY 
+				HANDLE CREATE COMMANDS TO SYNC ENTITY
 				:
 				USUALLY ONLY WHEN ITS THEIR PLAYER
 			*/

@@ -22,6 +22,7 @@ namespace DOTL
 		SYNC_ENTITY ,
 		SYNC_PLAYERNAME ,
 		ASSIGN_PLAYER ,
+		TIME_STAMP ,
 		COUNT
 	};
 

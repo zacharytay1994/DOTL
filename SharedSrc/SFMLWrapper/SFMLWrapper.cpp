@@ -1,6 +1,7 @@
 #include "SFMLWrapper.h"
 
 #include <iostream>
+#include <cmath>
 
 namespace DOTL
 {
@@ -35,8 +36,8 @@ namespace DOTL
 				med.pressed_ = true;
 				if ( sf_event.mouseButton.button == sf::Mouse::Left )
 				{
-					med.x_ = sf_event.mouseButton.x;
-					med.y_ = sf_event.mouseButton.y;
+					med.x_ = static_cast< float >( sf_event.mouseButton.x );
+					med.y_ = static_cast< float >( sf_event.mouseButton.y );
 				}
 			}
 			else
@@ -46,24 +47,36 @@ namespace DOTL
 		}
 	}
 
-	void SFMLInstance::Update ( GameData& data , std::string const& username )
+	float my_lerp ( float x , float y , float val )
+	{
+		return static_cast< float >( x + ( ( y - x ) * val ) );
+	}
+
+	void SFMLInstance::Update ( GameData& data )
 	{
 		window_->clear ();
 
 		// draw all entities as circles
 		sf::CircleShape shape ( 10 );
 		sf::Vector2f position;
-		for ( auto const& d : data.entities_ )
+		for ( auto& extended_entity : data.entities_ )
 		{
 			// id 0 is reserved for inactive entities
-			if ( d.id_ != 0 )
+			if ( extended_entity.entity_.id_ != 0 )
 			{
-				position = sf::Vector2f ( d.GetData ( ED::POS_X ) , d.GetData ( ED::POS_Y ) );
+				// perform entity interpolation here
+				// ...
+				float lerp_val = static_cast< float >( data.sync_delta_time_ > 1.0f ? 1.0f : data.sync_delta_time_ );
+				extended_entity.interpolated_x = my_lerp ( extended_entity.interpolated_x , extended_entity.entity_.GetData ( ED::POS_X ) , lerp_val );
+				extended_entity.interpolated_y = my_lerp ( extended_entity.interpolated_y , extended_entity.entity_.GetData ( ED::POS_Y ) , lerp_val );
+
+				// draw entity
+				position = sf::Vector2f ( extended_entity.interpolated_x , extended_entity.interpolated_y );
 				shape.setPosition ( position );
 				window_->draw ( shape );
 				position.y += font_offset_;
 				text_.setPosition ( position );
-				switch ( d.type_ )
+				switch ( extended_entity.entity_.type_ )
 				{
 				case ( ET::MINION ):
 
@@ -78,9 +91,9 @@ namespace DOTL
 				case ( ET::PLAYER ):
 
 					text_.setFillColor ( sf::Color::White );
-					if ( data.player_names_.find ( d.id_ ) != data.player_names_.end () )
+					if ( data.player_names_.find ( extended_entity.entity_.id_ ) != data.player_names_.end () )
 					{
-						text_.setString ( data.player_names_.at ( d.id_ ) );
+						text_.setString ( data.player_names_.at ( extended_entity.entity_.id_ ) );
 					}
 					else
 					{
