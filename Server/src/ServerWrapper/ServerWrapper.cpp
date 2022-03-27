@@ -216,7 +216,7 @@ namespace DOTL
 			}
 			game_logic_time_stamp = current_time;
 
-			game_data_.Update ( static_cast< float >( dt ) );
+			game_data_.UpdateServer ( static_cast< float >( dt ) );
 
 			// sync game data at intervals
 

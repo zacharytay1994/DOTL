@@ -22,6 +22,7 @@ namespace DOTL
 		uint16_t	owner_ { 0 };
 		TYPE		type_ { TYPE::COUNT };
 		uint64_t	sequence_ { 0 };
+		bool		active_ { false };
 
 		enum class DATA
 		{
@@ -71,7 +72,8 @@ namespace DOTL
 			entity_ ( entity ) ,
 			interpolated_x ( entity.GetData ( ED::POS_X ) ) ,
 			interpolated_y ( entity.GetData ( ED::POS_Y ) )
-		{}
+		{
+		}
 	};
 
 	struct GameData
@@ -105,14 +107,18 @@ namespace DOTL
 				entities_.push_back ( entity );
 				entities_.back ().entity_.id_ = ++unique_id_;
 				entities_.back ().entity_.owner_ = owner;
+				entities_.back ().entity_.active_ = true;
 				return entities_.back ().entity_;
 			}
 			else
 			{
 				uint16_t id = free_ids_.top ();
+				free_ids_.pop ();
 				entities_[ id ] = entity;
 				entities_[ id ].entity_.id_ = id;
 				entities_[ id ].entity_.owner_ = owner;
+				entities_[ id ].entity_.active_ = true;
+				entities_[ id ].entity_.sequence_ = 0;
 				return entities_[ id ].entity_;
 			}
 		}
@@ -133,6 +139,15 @@ namespace DOTL
 			return entities_[ entity.id_ ].entity_;
 		}
 
+		void RemoveEntity ( uint16_t id )
+		{
+			if ( id < entities_.size () )
+			{
+				entities_[ id ].entity_.active_ = false;
+				free_ids_.push ( id );
+			}
+		}
+
 		NetworkEntity& GetEntity ( uint16_t id )
 		{
 			if ( id < entities_.size () )
@@ -143,36 +158,39 @@ namespace DOTL
 			return entities_[ 0 ].entity_;
 		}
 
-		void Update ( float dt )
+		void UpdateServer ( float dt )
 		{
 			// Game entities logic update
 
 			for ( auto& extended_entity : entities_ )
 			{
-				NetworkEntity& entity = extended_entity.entity_;
-				// increment entity update sequence if its not the player,
-				// clients update their own player sequence
-				switch ( entity.type_ )
+				if ( extended_entity.entity_.active_ )
 				{
-				case ( ET::MINION ):
-				{
-					// update position with velocity
-					entity.SetPosition ( entity.GetData ( ED::POS_X ) + entity.GetData ( ED::VEL_X ) * dt , entity.GetData ( ED::POS_Y ) + entity.GetData ( ED::VEL_Y ) );
-					++entity.sequence_;
-					break;
-				}
-				case ( ET::TOWER ):
-				{
+					NetworkEntity& entity = extended_entity.entity_;
+					// increment entity update sequence if its not the player,
+					// clients update their own player sequence
+					switch ( entity.type_ )
+					{
+					case ( ET::MINION ):
+					{
+						// update position with velocity
+						entity.SetPosition ( entity.GetData ( ED::POS_X ) + entity.GetData ( ED::VEL_X ) * dt , entity.GetData ( ED::POS_Y ) + entity.GetData ( ED::VEL_Y ) );
+						++entity.sequence_;
+						break;
+					}
+					case ( ET::TOWER ):
+					{
 
-					++entity.sequence_;
-					break;
-				}
-				case ( ET::BULLET ):
-				{
+						++entity.sequence_;
+						break;
+					}
+					case ( ET::BULLET ):
+					{
 
-					++entity.sequence_;
-					break;
-				}
+						++entity.sequence_;
+						break;
+					}
+					}
 				}
 			}
 		}

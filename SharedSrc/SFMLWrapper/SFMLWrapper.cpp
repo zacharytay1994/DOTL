@@ -52,7 +52,7 @@ namespace DOTL
 		return static_cast< float >( x + ( ( y - x ) * val ) );
 	}
 
-	void SFMLInstance::Update ( GameData& data )
+	void SFMLInstance::Update ( GameData& data , float dt , uint16_t playerID )
 	{
 		window_->clear ();
 
@@ -62,16 +62,24 @@ namespace DOTL
 		for ( auto& extended_entity : data.entities_ )
 		{
 			// id 0 is reserved for inactive entities
-			if ( extended_entity.entity_.id_ != 0 )
+			if ( extended_entity.entity_.active_ )
 			{
-				// perform entity interpolation here
-				// ...
-				float lerp_val = static_cast< float >( data.sync_delta_time_ > 1.0f ? 1.0f : data.sync_delta_time_ );
-				extended_entity.interpolated_x = my_lerp ( extended_entity.interpolated_x , extended_entity.entity_.GetData ( ED::POS_X ) , lerp_val );
-				extended_entity.interpolated_y = my_lerp ( extended_entity.interpolated_y , extended_entity.entity_.GetData ( ED::POS_Y ) , lerp_val );
+				if ( extended_entity.entity_.id_ != playerID )
+				{
+					// perform entity interpolation here
+					// ...
+					float lerp_val = static_cast< float >( data.sync_delta_time_ > 1.0f ? 1.0f : data.sync_delta_time_ );
+					extended_entity.interpolated_x = my_lerp ( extended_entity.interpolated_x , extended_entity.entity_.GetData ( ED::POS_X ) , lerp_val * dt * 50 );
+					extended_entity.interpolated_y = my_lerp ( extended_entity.interpolated_y , extended_entity.entity_.GetData ( ED::POS_Y ) , lerp_val * dt * 50 );
+					position = sf::Vector2f ( extended_entity.interpolated_x , extended_entity.interpolated_y );
+				}
+				else
+				{
+					position = sf::Vector2f ( extended_entity.entity_.GetData ( ED::POS_X ) , extended_entity.entity_.GetData ( ED::POS_Y ) );
+				}
 
 				// draw entity
-				position = sf::Vector2f ( extended_entity.interpolated_x , extended_entity.interpolated_y );
+				//position = sf::Vector2f ( extended_entity.entity_.GetData ( ED::POS_X ) , extended_entity.entity_.GetData ( ED::POS_Y ) );
 				shape.setPosition ( position );
 				window_->draw ( shape );
 				position.y += font_offset_;

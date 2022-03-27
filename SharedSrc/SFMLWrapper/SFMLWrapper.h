@@ -23,7 +23,7 @@ namespace DOTL
 
 		void PollMouseEvents ( MouseEventData& med );
 
-		void Update ( GameData& data );
+		void Update ( GameData& data , float dt , uint16_t playerID );
 
 		bool IsOpen ();
 

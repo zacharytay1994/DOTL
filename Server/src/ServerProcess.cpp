@@ -60,6 +60,7 @@ namespace DOTL
 					entity.SetPosition ( static_cast< float >( rand () % 1200 ) , static_cast< float >( rand () % 1200 ) );
 					entity.type_ = ET::PLAYER;
 					entity = server_instance_->game_data_.CreateEntity ( entity , id_ );
+					player_id_ = entity.id_;
 
 					// create this player on all clients
 					SendNetworkPacketToAll ( NetworkPacket ( entity ) );
@@ -68,7 +69,7 @@ namespace DOTL
 					// this is to assign the id and username to the client
 					// the constructor constructs a PACKET_TYPE::ASSIGN_PLAYER packet
 
-					NetworkPacket username_packet = NetworkPacket ( id_ , username_.c_str () );
+					NetworkPacket username_packet = NetworkPacket ( entity.id_ , username_.c_str () );
 					NetworkSend ( clientSocket , username_packet );
 
 					server_instance_->game_data_.player_names_[ entity.id_ ] = username_;
@@ -107,6 +108,8 @@ namespace DOTL
 					NetworkSend ( clientSocket , NetworkPacket ( NETWORK_COMMAND::QUIT ) );
 					server_instance_->ErasePlayer ( id_ );
 					ServerLog ( 'I' , username_ , " left the server." );
+
+					server_instance_->game_data_.RemoveEntity ( player_id_ );
 
 					// setting connected to false terminates the thread handling this client
 

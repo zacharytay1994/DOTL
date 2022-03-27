@@ -51,12 +51,13 @@ namespace DOTL
 			if ( game_data_.player_names_.find ( player_id_ ) != game_data_.player_names_.end () &&
 				player_id_ < game_data_.entities_.size () )
 			{
-				NetworkEntity& player = game_data_.GetEntity ( player_id_ );
-
 				// set to vector code
-				UpdatePlayer ( dt , player , game_data_.player_speed_ );
+				//game_data_.UpdateClient ( player_id_ , static_cast< float >( dt ) , mouse_data_ );
+				UpdateClient ( dt );
 
 				// sync - pass to server the player position
+				NetworkEntity& player = game_data_.GetEntity ( player_id_ );
+
 				if ( time > sync_interval )
 				{
 					time = 0.0;
@@ -72,7 +73,7 @@ namespace DOTL
 			}
 
 			// sfml render
-			sfml_instance_.Update ( game_data_ );
+			sfml_instance_.Update ( game_data_ , static_cast< float >( dt ) , player_id_ );
 		}
 
 		NetworkPacket packet ( NETWORK_COMMAND::QUIT );
@@ -306,24 +307,27 @@ namespace DOTL
 				{
 					game_data_.AddEntity ( *entity );
 				}
-				game_data_.AddEntity ( *entity );
 			}
 		}
 	}
 
-	void SFMLProcess::UpdatePlayer ( double dt , NetworkEntity& player , float playerSpeed )
+	void SFMLProcess::UpdateClient ( double dt )
 	{
+		// UPDATE PLAYER 
+
+		NetworkEntity& player = game_data_.GetEntity ( player_id_ );
+
 		// get direction vector between player and mouse
 		sf::Vector2f dir ( mouse_data_.x_ - player.GetData ( ED::POS_X ) , mouse_data_.y_ - player.GetData ( ED::POS_Y ) );
 		// normalize direction
 		float length = sqrt ( dir.x * dir.x + dir.y * dir.y );
 		dir /= length;
 		// set velocity of player = speed * dir
-		player.SetVelocity ( dir.x * playerSpeed , dir.y * playerSpeed );
+		player.SetVelocity ( dir.x * game_data_.player_speed_ , dir.y * game_data_.player_speed_ );
 
 		// move to mouse position
 		// calculate distance away
-		if ( length > playerSpeed * dt * 0.5f )
+		if ( length > game_data_.player_speed_ * dt * 0.5f )
 		{
 			player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) , player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
 		}

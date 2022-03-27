@@ -29,6 +29,7 @@ namespace DOTL
 
 	private:
 		uint16_t id_ { 0 };
+		uint16_t player_id_ { 0 };
 		std::string username_ { "" };
 		ServerInstance_WinSock2* const server_instance_;
 
