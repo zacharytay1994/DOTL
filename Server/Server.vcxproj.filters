@@ -27,6 +27,12 @@
     <ClCompile Include="..\SharedSrc\NetworkWrapper\NetworkCommands.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\SharedSrc\GameData\GameAI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SharedSrc\GameData\Statemachine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ServerWrapper\ServerWrapper.h">

@@ -122,7 +122,8 @@ namespace DOTL
 				*/
 				case ( PACKET_TYPE::CREATE ):
 				{
-					game_data_.AddEntity ( *reinterpret_cast< NetworkEntity* >( packet.buffer_ ) );
+					NetworkEntity* entity = reinterpret_cast< NetworkEntity* >( packet.buffer_ );
+					game_data_.AddEntity ( *entity );
 					break;
 				}
 
@@ -130,6 +131,11 @@ namespace DOTL
 				{
 					player_id_ = *reinterpret_cast< uint16_t* >( packet.buffer_ );
 					player_username_ = packet.buffer_ + sizeof ( uint16_t );
+
+					// set mouse click position to player position upon creation
+
+					mouse_data_.x_ = game_data_.entities_[ player_id_ ].entity_.GetData ( ED::POS_X );
+					mouse_data_.y_ = game_data_.entities_[ player_id_ ].entity_.GetData ( ED::POS_Y );
 					break;
 				}
 
@@ -288,25 +294,22 @@ namespace DOTL
 		for ( unsigned int i = 0; i < number_of_entities; ++i )
 		{
 			entity = reinterpret_cast< NetworkEntity const* >( packet.buffer_ + ( i * entity_size ) + 4 );
-			if ( entity->id_ > 0 )
+			// do server reconciliation for player here
+			if ( entity->id_ == player_id_ )
 			{
-				// do server reconciliation for player here
-				if ( entity->id_ == player_id_ )
+				// server reconciliation logic - for now no validation to sequence so it just 
+				// does not update the player data is the sequence number is outdated
+				if ( entity->sequence_ < game_data_.GetEntity ( player_id_ ).sequence_ )
 				{
-					// server reconciliation logic - for now no validation to sequence so it just 
-					// does not update the player data is the sequence number is outdated
-					if ( entity->sequence_ < game_data_.GetEntity ( player_id_ ).sequence_ )
-					{
-						// expected response from server
-						// do stuff with response, validation etc.
+					// expected response from server
+					// do stuff with response, validation etc.
 
-						// ...
-					}
+					// ...
 				}
-				else
-				{
-					game_data_.AddEntity ( *entity );
-				}
+			}
+			else
+			{
+				game_data_.AddEntity ( *entity );
 			}
 		}
 	}

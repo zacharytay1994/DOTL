@@ -58,6 +58,7 @@ namespace DOTL
 					NetworkEntity entity;
 					srand ( static_cast< unsigned int >( time ( NULL ) ) );
 					entity.SetPosition ( static_cast< float >( rand () % 1200 ) , static_cast< float >( rand () % 1200 ) );
+					entity.SetVelocity ( 0.0f , 0.0f );
 					entity.type_ = ET::PLAYER;
 					entity = server_instance_->game_data_.CreateEntity ( entity , id_ );
 					player_id_ = entity.id_;

@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <iostream>
 
+#include "GameAI.h"
+
 namespace DOTL
 {
 	struct NetworkEntity
@@ -66,6 +68,12 @@ namespace DOTL
 		NetworkEntity entity_;
 		float interpolated_x { 0 } , interpolated_y { 0 };
 
+		/*
+			These variables are used by the server to process entity AI
+		*/
+		// Minion
+		MinionAI minion_ai_;
+
 		NetworkEntityExtended () = default;
 		NetworkEntityExtended ( NetworkEntity entity )
 			:
@@ -95,6 +103,15 @@ namespace DOTL
 		uint16_t unique_id_ { 0 };
 		std::stack<uint16_t> free_ids_;
 
+		// ai states
+		std::shared_ptr<MinionAISeek> ai_state_minion_seek_ = std::make_shared<MinionAISeek> ();
+
+		GameData ()
+		{
+			entities_.reserve ( 100 );
+			entities_.emplace_back ();
+		}
+
 		/*
 		*	THIS FUNCTION CREATES A NEW ENTITY, I.E a new id and owner is assigned to it
 		*	:
@@ -102,13 +119,12 @@ namespace DOTL
 		*/
 		NetworkEntity const& CreateEntity ( NetworkEntity const& entity , uint16_t owner = 0 )
 		{
+			uint16_t entity_id { 0 };
 			if ( free_ids_.empty () )
 			{
 				entities_.push_back ( entity );
 				entities_.back ().entity_.id_ = ++unique_id_;
-				entities_.back ().entity_.owner_ = owner;
-				entities_.back ().entity_.active_ = true;
-				return entities_.back ().entity_;
+				entity_id = entities_.size () - 1;
 			}
 			else
 			{
@@ -116,11 +132,23 @@ namespace DOTL
 				free_ids_.pop ();
 				entities_[ id ] = entity;
 				entities_[ id ].entity_.id_ = id;
-				entities_[ id ].entity_.owner_ = owner;
-				entities_[ id ].entity_.active_ = true;
-				entities_[ id ].entity_.sequence_ = 0;
-				return entities_[ id ].entity_;
 			}
+
+			NetworkEntityExtended& entity_extended = GetEntityExtended ( entity_id );
+			entity_extended.entity_.owner_ = owner;
+			entity_extended.entity_.active_ = true;
+			entity_extended.entity_.sequence_ = 0;
+
+			// type specific changes
+			switch ( entity.type_ )
+			{
+			case ( ET::MINION ):
+			{
+				entity_extended.minion_ai_.SwitchState ( ai_state_minion_seek_ );
+			}
+			}
+
+			return entity_extended.entity_;
 		}
 
 		/*
@@ -134,6 +162,12 @@ namespace DOTL
 			if ( entity.id_ >= entities_.size () )
 			{
 				entities_.resize ( entity.id_ + 1 );
+			}
+			// set initial position if first time initialize
+			if ( !entities_[ entity.id_ ].entity_.active_ )
+			{
+				entities_[ entity.id_ ].interpolated_x = entity.GetData ( ED::POS_X );
+				entities_[ entity.id_ ].interpolated_y = entity.GetData ( ED::POS_Y );
 			}
 			entities_[ entity.id_ ].entity_ = entity;
 			return entities_[ entity.id_ ].entity_;
@@ -158,6 +192,16 @@ namespace DOTL
 			return entities_[ 0 ].entity_;
 		}
 
+		NetworkEntityExtended& GetEntityExtended ( uint16_t id )
+		{
+			if ( id < entities_.size () )
+			{
+				return entities_[ id ];
+			}
+			std::cerr << "DOTL::GameData::GetEntityExtended() [FILE: GameData.h] - Getting entity that does not exist." << std::endl;
+			return entities_[ 0 ];
+		}
+
 		void UpdateServer ( float dt )
 		{
 			// Game entities logic update
@@ -174,8 +218,13 @@ namespace DOTL
 					case ( ET::MINION ):
 					{
 						// update position with velocity
-						entity.SetPosition ( entity.GetData ( ED::POS_X ) + entity.GetData ( ED::VEL_X ) * dt , entity.GetData ( ED::POS_Y ) + entity.GetData ( ED::VEL_Y ) );
-						++entity.sequence_;
+						/*entity.SetPosition ( entity.GetData ( ED::POS_X ) + entity.GetData ( ED::VEL_X ) * dt , entity.GetData ( ED::POS_Y ) + entity.GetData ( ED::VEL_Y ) );
+						++entity.sequence_;*/
+						extended_entity.minion_ai_.Update ( dt , entities_ , &entity );
+
+						// move towards destination
+						entity.SetPosition ( entity.GetData ( ED::POS_X ) + entity.GetData ( ED::VEL_X ) * dt ,
+							entity.GetData ( ED::POS_Y ) + entity.GetData ( ED::VEL_Y ) * dt );
 						break;
 					}
 					case ( ET::TOWER ):

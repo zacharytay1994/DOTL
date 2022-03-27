@@ -24,6 +24,12 @@
     <ClCompile Include="..\SharedSrc\NetworkWrapper\NetworkCommands.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\SharedSrc\GameData\Statemachine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SharedSrc\GameData\GameAI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SharedSrc\NetworkWrapper\NetworkProcess.h">
@@ -36,6 +42,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\SharedSrc\GameData\GameData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SharedSrc\GameData\GameAI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SharedSrc\GameData\Statemachine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -61,6 +61,10 @@ namespace DOTL
 		sf::Vector2f position;
 		for ( auto& extended_entity : data.entities_ )
 		{
+			if ( extended_entity.entity_.id_ == 0 )
+			{
+				continue;
+			}
 			// id 0 is reserved for inactive entities
 			if ( extended_entity.entity_.active_ )
 			{

@@ -147,12 +147,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\SharedSrc\GameData\GameAI.cpp" />
+    <ClCompile Include="..\SharedSrc\GameData\Statemachine.cpp" />
     <ClCompile Include="..\SharedSrc\NetworkWrapper\NetworkCommands.cpp" />
     <ClCompile Include="..\SharedSrc\SFMLWrapper\SFMLWrapper.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SharedSrc\GameData\GameData.h" />
+    <ClInclude Include="..\SharedSrc\GameData\GameAI.h" />
+    <ClInclude Include="..\SharedSrc\GameData\Statemachine.h" />
     <ClInclude Include="..\SharedSrc\NetworkWrapper\NetworkCommands.h" />
     <ClInclude Include="..\SharedSrc\NetworkWrapper\NetworkProcess.h" />
     <ClInclude Include="..\SharedSrc\SFMLWrapper\SFMLWrapper.h" />
