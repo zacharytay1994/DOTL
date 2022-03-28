@@ -23,13 +23,16 @@ namespace DOTL
 		SYNC_PLAYERNAME ,
 		ASSIGN_PLAYER ,
 		TIME_STAMP ,
+		SET_TEAM ,
+		SET_POSITION ,
 		COUNT
 	};
 
 	enum class NETWORK_COMMAND
 	{
 		QUIT = 0 ,
-		PLAYERS
+		PLAYERS ,
+		START
 	};
 
 	struct NetworkPacket
@@ -41,6 +44,8 @@ namespace DOTL
 		NetworkPacket ( NETWORK_COMMAND command );
 		NetworkPacket ( NetworkEntity const& entity );
 		NetworkPacket ( uint16_t i , char const* playerName );
+		NetworkPacket ( bool team );
+		NetworkPacket ( float x , float y );
 	};
 
 	static constexpr int PACKET_SIZE = sizeof ( NetworkPacket );

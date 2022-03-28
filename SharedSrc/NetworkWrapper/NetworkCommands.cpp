@@ -35,6 +35,21 @@ namespace DOTL
 		memcpy ( buffer_ + sizeof ( uint16_t ) , playerName , temp.size () );
 	}
 
+	NetworkPacket::NetworkPacket ( bool team )
+		:
+		type_ ( PACKET_TYPE::SET_TEAM )
+	{
+		memcpy ( buffer_ , &team , sizeof ( bool ) );
+	}
+
+	NetworkPacket::NetworkPacket ( float x , float y )
+		:
+		type_(PACKET_TYPE::SET_POSITION)
+	{
+		memcpy ( buffer_ , &x , sizeof ( float ) );
+		memcpy ( buffer_ + sizeof ( float ) , &y , sizeof ( float ) );
+	}
+
 	int NetworkReceive ( SOCKET socket , char* buffer , int size )
 	{
 		return recv ( socket , buffer , size , 0 );

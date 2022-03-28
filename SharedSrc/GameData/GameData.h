@@ -26,6 +26,13 @@ namespace DOTL
 		uint64_t	sequence_ { 0 };
 		bool		active_ { false };
 
+		// health
+		uint8_t	health_ { 10 };
+		uint8_t	max_health_ { 10 };
+
+		// if not team 1 means team 2
+		bool team_1_ { true };
+
 		enum class DATA
 		{
 			POS_X = 0 ,
@@ -73,6 +80,10 @@ namespace DOTL
 		*/
 		// Minion
 		MinionAI minion_ai_;
+		// Tower 
+		TowerAI tower_ai_;
+		// Bullet
+		BulletAI bullet_ai_;
 
 		NetworkEntityExtended () = default;
 		NetworkEntityExtended ( NetworkEntity entity )
@@ -104,7 +115,10 @@ namespace DOTL
 		std::stack<uint16_t> free_ids_;
 
 		// ai states
-		std::shared_ptr<MinionAISeek> ai_state_minion_seek_ = std::make_shared<MinionAISeek> ();
+		std::shared_ptr<MinionAISeekTower> ai_state_minion_seek_ = std::make_shared<MinionAISeekTower> ();
+		std::shared_ptr<MinionAIAttack> ai_state_minion_attack_ = std::make_shared<MinionAIAttack> ();
+		std::shared_ptr<TowerAIDefault> ai_state_tower_default_ = std::make_shared<TowerAIDefault> ();
+		std::shared_ptr<BulletAISeek> ai_state_bullet_seek_ = std::make_shared<BulletAISeek> ();
 
 		GameData ()
 		{
@@ -128,10 +142,10 @@ namespace DOTL
 			}
 			else
 			{
-				uint16_t id = free_ids_.top ();
+				entity_id = free_ids_.top ();
 				free_ids_.pop ();
-				entities_[ id ] = entity;
-				entities_[ id ].entity_.id_ = id;
+				entities_[ entity_id ].entity_ = entity;
+				entities_[ entity_id ].entity_.id_ = entity_id;
 			}
 
 			NetworkEntityExtended& entity_extended = GetEntityExtended ( entity_id );
@@ -145,10 +159,33 @@ namespace DOTL
 			case ( ET::MINION ):
 			{
 				entity_extended.minion_ai_.SwitchState ( ai_state_minion_seek_ );
+				break;
+			}
+			case ( ET::TOWER ):
+			{
+				entity_extended.tower_ai_.SwitchState ( ai_state_tower_default_ );
+				break;
+			}
+			case ( ET::BULLET ):
+			{
+				entity_extended.bullet_ai_.SwitchState ( ai_state_bullet_seek_ );
+				break;
 			}
 			}
 
+			entity_extended.interpolated_x = entity.GetData ( ED::POS_X );
+			entity_extended.interpolated_y = entity.GetData ( ED::POS_Y );
+
 			return entity_extended.entity_;
+		}
+
+		NetworkEntity const& CreateEntity ( ET type , float x , float y , bool team = false )
+		{
+			NetworkEntity entity;
+			entity.type_ = type;
+			entity.team_1_ = team;
+			entity.SetPosition ( x , y );
+			return CreateEntity ( entity );
 		}
 
 		/*
@@ -202,15 +239,25 @@ namespace DOTL
 			return entities_[ 0 ];
 		}
 
+		float my_lerp2 ( float x , float y , float val )
+		{
+			return static_cast< float >( x + ( ( y - x ) * val ) );
+		}
+
 		void UpdateServer ( float dt )
 		{
 			// Game entities logic update
-
+			float lerp_val = static_cast< float >( sync_delta_time_ > 1.0f ? 1.0f : sync_delta_time_ );
 			for ( auto& extended_entity : entities_ )
 			{
 				if ( extended_entity.entity_.active_ )
 				{
 					NetworkEntity& entity = extended_entity.entity_;
+
+					// calculate interpolated positions
+					extended_entity.interpolated_x = my_lerp2 ( extended_entity.interpolated_x , extended_entity.entity_.GetData ( ED::POS_X ) , lerp_val * dt * 50 );
+					extended_entity.interpolated_y = my_lerp2 ( extended_entity.interpolated_y , extended_entity.entity_.GetData ( ED::POS_Y ) , lerp_val * dt * 50 );
+
 					// increment entity update sequence if its not the player,
 					// clients update their own player sequence
 					switch ( entity.type_ )
@@ -220,23 +267,25 @@ namespace DOTL
 						// update position with velocity
 						/*entity.SetPosition ( entity.GetData ( ED::POS_X ) + entity.GetData ( ED::VEL_X ) * dt , entity.GetData ( ED::POS_Y ) + entity.GetData ( ED::VEL_Y ) );
 						++entity.sequence_;*/
-						extended_entity.minion_ai_.Update ( dt , entities_ , &entity );
+						extended_entity.minion_ai_.Update ( dt , *this , &extended_entity );
 
-						// move towards destination
+						// move position with velocity
 						entity.SetPosition ( entity.GetData ( ED::POS_X ) + entity.GetData ( ED::VEL_X ) * dt ,
 							entity.GetData ( ED::POS_Y ) + entity.GetData ( ED::VEL_Y ) * dt );
 						break;
 					}
 					case ( ET::TOWER ):
 					{
-
-						++entity.sequence_;
+						extended_entity.tower_ai_.Update ( dt , *this , &extended_entity );
 						break;
 					}
 					case ( ET::BULLET ):
 					{
+						extended_entity.bullet_ai_.Update ( dt , *this , &extended_entity );
 
-						++entity.sequence_;
+						// move position with velocity
+						entity.SetPosition ( entity.GetData ( ED::POS_X ) + entity.GetData ( ED::VEL_X ) * dt ,
+							entity.GetData ( ED::POS_Y ) + entity.GetData ( ED::VEL_Y ) * dt );
 						break;
 					}
 					}

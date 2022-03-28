@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <sstream>
 #include <chrono>
+#include <iostream>
 
 namespace DOTL
 {
@@ -56,11 +57,10 @@ namespace DOTL
 				UpdateClient ( dt );
 
 				// sync - pass to server the player position
-				NetworkEntity& player = game_data_.GetEntity ( player_id_ );
-
 				if ( time > sync_interval )
 				{
 					time = 0.0;
+					NetworkEntity& player = game_data_.GetEntity ( player_id_ );
 					NetworkPacket packet;
 					packet.type_ = PACKET_TYPE::SYNC_ENTITY;
 					memcpy ( packet.buffer_ , &player , sizeof ( NetworkEntity ) );
@@ -165,6 +165,24 @@ namespace DOTL
 					{
 						game_data_.sync_delta_time_ = static_cast< double >( game_data_.time_stamp_ - old_time_stamp ) * 0.001;
 					}
+					break;
+				}
+
+				case ( PACKET_TYPE::SET_TEAM ):
+				{
+					NetworkEntityExtended& player = game_data_.GetEntityExtended ( player_id_ );
+					player.entity_.team_1_ = *reinterpret_cast< bool* >( packet.buffer_ );
+					break;
+				}
+
+				case ( PACKET_TYPE::SET_POSITION ):
+				{
+					NetworkEntityExtended& player = game_data_.GetEntityExtended ( player_id_ );
+					float x = *reinterpret_cast< float* >( packet.buffer_ );
+					float y = *reinterpret_cast< float* >( packet.buffer_ + sizeof ( float ) );
+					player.entity_.SetPosition ( x , y );
+					mouse_data_.x_ = x;
+					mouse_data_.y_ = y;
 					break;
 				}
 				}
@@ -275,6 +293,10 @@ namespace DOTL
 					{
 
 					}
+					else if ( check == "/start" )
+					{
+						NetworkSend ( clientSocket , NetworkPacket ( NETWORK_COMMAND::START ) );
+					}
 				}
 				// send message as string
 				else
@@ -306,6 +328,9 @@ namespace DOTL
 
 					// ...
 				}
+
+				// sync health and other stuff
+				game_data_.GetEntity ( entity->id_ ).health_ = entity->health_;
 			}
 			else
 			{

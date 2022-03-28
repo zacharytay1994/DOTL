@@ -109,7 +109,7 @@ namespace DOTL
 		int entity_size = static_cast< int >( sizeof ( NetworkEntity ) );
 
 		// first 4 bytes are reserved for number of entities in the packet
-		int entities_per_packed_buffer = MAX_DATA_SIZE - 4 / entity_size;
+		int entities_per_packed_buffer = ( MAX_DATA_SIZE - 4 ) / entity_size;
 		int pack_iterations = static_cast< int >( game_data_.entities_.size () ) / entities_per_packed_buffer;
 		int i { 0 };
 		for ( int pack_iteration = 0; pack_iteration < pack_iterations; ++pack_iteration )
@@ -226,6 +226,15 @@ namespace DOTL
 				for ( auto const& client : clients_ )
 				{
 					SyncGameDataToClient ( client.second.socket_ );
+				}
+
+				// set own time stamp - for interpolating on server side
+				uint64_t time_stamp = std::chrono::system_clock::now ().time_since_epoch () / std::chrono::milliseconds ( 1 );
+				uint64_t old_time_stamp = game_data_.time_stamp_;
+				game_data_.time_stamp_ = time_stamp;
+				if ( game_data_.time_stamp_ > 0 )
+				{
+					game_data_.sync_delta_time_ = static_cast< double >( game_data_.time_stamp_ - old_time_stamp ) * 0.001;
 				}
 			}
 			else

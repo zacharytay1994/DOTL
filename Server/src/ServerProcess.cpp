@@ -140,6 +140,39 @@ namespace DOTL
 					break;
 				}
 
+				case ( NETWORK_COMMAND::START ):
+				{
+					// create 2 tower on each team diagonally across
+					// create team 1 towers - make first tower a spawner
+					uint16_t t1_first_tower = server_instance_->game_data_.CreateEntity ( ET::TOWER , 100 , 100 , false ).id_;
+					server_instance_->game_data_.GetEntityExtended ( t1_first_tower ).tower_ai_.spawner_ = true;
+					server_instance_->game_data_.CreateEntity ( ET::TOWER , 300 , 300 , false );
+
+					// create team 2 turrets
+					uint16_t t2_first_tower = server_instance_->game_data_.CreateEntity ( ET::TOWER , 1100 , 1100 , true ).id_;
+					server_instance_->game_data_.GetEntityExtended ( t2_first_tower ).tower_ai_.spawner_ = true;
+					server_instance_->game_data_.CreateEntity ( ET::TOWER , 900 , 900 , true );
+
+					float red_x { 150 } , red_y { 150 } , blue_x { 1050 } , blue_y { 1050 };
+					// set player teams
+					bool team { true };
+					for ( auto const& client : server_instance_->GetClients () )
+					{
+						if ( team )
+						{
+							NetworkSend ( client.second.socket_ , NetworkPacket ( blue_x , blue_y ) );
+							NetworkSend ( client.second.socket_ , NetworkPacket ( team ) );
+						}
+						else
+						{
+							NetworkSend ( client.second.socket_ , NetworkPacket ( red_x , red_y ) );
+							NetworkSend ( client.second.socket_ , NetworkPacket ( team ) );
+						}
+						team = !team;
+					}
+					break;
+				}
+
 				}
 				break;
 			}
@@ -167,8 +200,11 @@ namespace DOTL
 			case ( PACKET_TYPE::SYNC_ENTITY ):
 			{
 				NetworkEntity* player = reinterpret_cast< NetworkEntity* >( packet.buffer_ );
+				// keep server side health - hard code for now until more stuff needs to be synced
+				auto player_health = server_instance_->game_data_.GetEntity ( player->id_ ).health_;
 				// should do some validation but maybe later
 				server_instance_->game_data_.AddEntity ( *player );
+				server_instance_->game_data_.GetEntity ( player->id_ ).health_ = player_health;
 				break;
 			}
 			}

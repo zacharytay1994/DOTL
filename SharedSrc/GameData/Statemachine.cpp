@@ -2,11 +2,11 @@
 
 namespace DOTL
 {
-	void Statemachine::Update ( float dt , ENTITIES const& entities , NetworkEntity* entity )
+	void Statemachine::Update ( float dt , GameData& data , NetworkEntityExtended* entity )
 	{
 		if ( current_state_ != nullptr )
 		{
-			current_state_->Update ( this , dt , entities , entity );
+			current_state_->Update ( this , dt , data , entity );
 		}
 	}
 

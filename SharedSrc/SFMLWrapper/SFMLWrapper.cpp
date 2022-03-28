@@ -56,8 +56,16 @@ namespace DOTL
 	{
 		window_->clear ();
 
+		float bar_x { 120.0f };
+		float bar_y { 15.0f };
+
 		// draw all entities as circles
 		sf::CircleShape shape ( 10 );
+		sf::RectangleShape hp_bar_border ( sf::Vector2f ( bar_x , 3 ) );
+		sf::RectangleShape hp_bar_inner ( sf::Vector2f ( bar_x , 3 ) );
+		hp_bar_border.setOutlineThickness ( 1 );
+		hp_bar_border.setFillColor ( sf::Color::Transparent );
+		hp_bar_inner.setFillColor ( sf::Color::Green );
 		sf::Vector2f position;
 		for ( auto& extended_entity : data.entities_ )
 		{
@@ -85,23 +93,38 @@ namespace DOTL
 				// draw entity
 				//position = sf::Vector2f ( extended_entity.entity_.GetData ( ED::POS_X ) , extended_entity.entity_.GetData ( ED::POS_Y ) );
 				shape.setPosition ( position );
+				if ( extended_entity.entity_.team_1_ )
+				{
+					shape.setFillColor ( sf::Color::Red );
+				}
+				else
+				{
+					shape.setFillColor ( sf::Color::Blue );
+				}
 				window_->draw ( shape );
+
+				// draw name
 				position.y += font_offset_;
 				text_.setPosition ( position );
 				switch ( extended_entity.entity_.type_ )
 				{
 				case ( ET::MINION ):
-
-					text_.setFillColor ( sf::Color::White );
+				{
 					text_.setString ( "Minion" );
 					break;
+				}
 				case ( ET::TOWER ):
-
-					text_.setFillColor ( sf::Color::White );
+				{
 					text_.setString ( "Tower" );
 					break;
+				}
+				case ( ET::BULLET ):
+				{
+					text_.setString ( "Bullet" );
+					break;
+				}
 				case ( ET::PLAYER ):
-
+				{
 					text_.setFillColor ( sf::Color::White );
 					if ( data.player_names_.find ( extended_entity.entity_.id_ ) != data.player_names_.end () )
 					{
@@ -113,7 +136,19 @@ namespace DOTL
 					}
 					break;
 				}
+				}
 				window_->draw ( text_ );
+
+				// draw bar
+				position.y -= 2.0f * font_offset_;
+				hp_bar_border.setPosition ( position );
+				window_->draw ( hp_bar_border );
+
+				// calculate inner hp bar
+				float hp_ratio = static_cast< float >( extended_entity.entity_.health_ ) / static_cast< float >( extended_entity.entity_.max_health_ );
+				hp_bar_inner.setPosition ( position );
+				hp_bar_inner.setSize ( sf::Vector2f ( hp_ratio * bar_x , bar_y ) );
+				window_->draw ( hp_bar_inner );
 			}
 		}
 

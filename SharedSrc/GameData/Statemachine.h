@@ -5,14 +5,13 @@
 
 namespace DOTL
 {
+	struct GameData;
 	struct NetworkEntityExtended;
-	struct NetworkEntity;
 	struct Statemachine;
-	using ENTITIES = std::vector<NetworkEntityExtended>;
 	struct State
 	{
 		virtual void Pre () = 0;
-		virtual void Update ( Statemachine* statemachine , float dt , ENTITIES const& entities , NetworkEntity* entity ) = 0;
+		virtual void Update ( Statemachine* statemachine , float dt , GameData& GameData , NetworkEntityExtended* entity ) = 0;
 		virtual void Post () = 0;
 	};
 
@@ -20,7 +19,7 @@ namespace DOTL
 	{
 		Statemachine () = default;
 
-		void Update ( float dt , ENTITIES const& entities , NetworkEntity* entity );
+		void Update ( float dt , GameData& GameData , NetworkEntityExtended* entity );
 
 		void SwitchState ( std::shared_ptr<State> state );
 
