@@ -25,6 +25,7 @@ namespace DOTL
 		TIME_STAMP ,
 		SET_TEAM ,
 		SET_POSITION ,
+		CREATE_BULLET ,
 		COUNT
 	};
 
@@ -46,6 +47,7 @@ namespace DOTL
 		NetworkPacket ( uint16_t i , char const* playerName );
 		NetworkPacket ( bool team );
 		NetworkPacket ( float x , float y );
+		NetworkPacket ( float x , float y , uint16_t target , bool team );
 	};
 
 	static constexpr int PACKET_SIZE = sizeof ( NetworkPacket );

@@ -188,7 +188,7 @@ namespace DOTL
 
 				// relay object creation command to all clients
 
-				SendNetworkPacketToAll ( NetworkPacket ( entity ) );
+				//SendNetworkPacketToAll ( NetworkPacket ( entity ) );
 				break;
 			}
 
@@ -206,6 +206,18 @@ namespace DOTL
 				server_instance_->game_data_.AddEntity ( *player );
 				server_instance_->game_data_.GetEntity ( player->id_ ).health_ = player_health;
 				break;
+			}
+
+			case ( PACKET_TYPE::CREATE_BULLET ):
+			{
+				uint16_t id = server_instance_->game_data_.CreateEntity (
+					ET::BULLET ,
+					*reinterpret_cast< float* >( packet.buffer_ ) ,
+					*reinterpret_cast< float* >( packet.buffer_ + sizeof ( float ) ) ,
+					*reinterpret_cast< bool* >( packet.buffer_ + sizeof ( float ) + sizeof ( float ) + sizeof ( uint16_t ) )
+				).id_;
+
+				server_instance_->game_data_.GetEntityExtended ( id ).bullet_ai_.target_id_ = *reinterpret_cast< uint16_t* >( packet.buffer_ + sizeof ( float ) + sizeof ( float ) );
 			}
 			}
 

@@ -24,6 +24,8 @@ namespace DOTL
 	{
 		sf::Event sf_event;
 
+		med.pressed_ = false;
+
 		while ( window_->pollEvent ( sf_event ) )
 		{
 			if ( sf_event.type == sf::Event::Closed )
@@ -33,16 +35,12 @@ namespace DOTL
 
 			if ( sf_event.type == sf::Event::MouseButtonPressed )
 			{
-				med.pressed_ = true;
 				if ( sf_event.mouseButton.button == sf::Mouse::Left )
 				{
+					med.pressed_ = true;
 					med.x_ = static_cast< float >( sf_event.mouseButton.x );
 					med.y_ = static_cast< float >( sf_event.mouseButton.y );
 				}
-			}
-			else
-			{
-				med.pressed_ = false;
 			}
 		}
 	}
@@ -52,7 +50,7 @@ namespace DOTL
 		return static_cast< float >( x + ( ( y - x ) * val ) );
 	}
 
-	void SFMLInstance::Update ( GameData& data , float dt , uint16_t playerID )
+	void SFMLInstance::Update ( GameData& data , float dt , uint16_t playerID , uint16_t targetID )
 	{
 		window_->clear ();
 
@@ -61,11 +59,19 @@ namespace DOTL
 
 		// draw all entities as circles
 		sf::CircleShape shape ( 10 );
+		shape.setOrigin ( shape.getRadius () , shape.getRadius () );
+
+		sf::CircleShape selected_outline ( 16 );
+		selected_outline.setOrigin ( selected_outline.getRadius () , selected_outline.getRadius () );
+		selected_outline.setFillColor ( sf::Color::Transparent );
+		selected_outline.setOutlineThickness ( 3 );
+
 		sf::RectangleShape hp_bar_border ( sf::Vector2f ( bar_x , bar_y ) );
 		sf::RectangleShape hp_bar_inner ( sf::Vector2f ( bar_x , bar_y ) );
 		hp_bar_border.setOutlineThickness ( 1 );
 		hp_bar_border.setFillColor ( sf::Color::Transparent );
 		hp_bar_inner.setFillColor ( sf::Color::Green );
+
 		sf::Vector2f position;
 		for ( auto& extended_entity : data.entities_ )
 		{
@@ -103,6 +109,12 @@ namespace DOTL
 					shape.setFillColor ( sf::Color::Blue );
 				}
 				window_->draw ( shape );
+
+				if ( extended_entity.entity_.id_ == targetID )
+				{
+					selected_outline.setPosition ( position );
+					window_->draw ( selected_outline );
+				}
 
 				// draw name
 				position.y += font_offset_;

@@ -44,10 +44,20 @@ namespace DOTL
 
 	NetworkPacket::NetworkPacket ( float x , float y )
 		:
-		type_(PACKET_TYPE::SET_POSITION)
+		type_ ( PACKET_TYPE::SET_POSITION )
 	{
 		memcpy ( buffer_ , &x , sizeof ( float ) );
 		memcpy ( buffer_ + sizeof ( float ) , &y , sizeof ( float ) );
+	}
+
+	NetworkPacket::NetworkPacket ( float x , float y , uint16_t target , bool team )
+		:
+		type_ { PACKET_TYPE::CREATE_BULLET }
+	{
+		memcpy ( buffer_ , &x , sizeof ( float ) );
+		memcpy ( buffer_ + sizeof ( float ) , &y , sizeof ( float ) );
+		memcpy ( buffer_ + sizeof ( float ) + sizeof ( float ) , &target , sizeof ( uint16_t ) );
+		memcpy ( buffer_ + sizeof ( float ) + sizeof ( float ) * sizeof ( uint16_t ) , &team , sizeof ( bool ) );
 	}
 
 	int NetworkReceive ( SOCKET socket , char* buffer , int size )

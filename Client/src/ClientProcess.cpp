@@ -54,7 +54,7 @@ namespace DOTL
 			{
 				// set to vector code
 				//game_data_.UpdateClient ( player_id_ , static_cast< float >( dt ) , mouse_data_ );
-				UpdateClient ( dt );
+				UpdateClient ( dt , clientSocket );
 
 				// sync - pass to server the player position
 				if ( time > sync_interval )
@@ -73,7 +73,7 @@ namespace DOTL
 			}
 
 			// sfml render
-			sfml_instance_.Update ( game_data_ , static_cast< float >( dt ) , player_id_ );
+			sfml_instance_.Update ( game_data_ , static_cast< float >( dt ) , player_id_ , target_id_ );
 		}
 
 		NetworkPacket packet ( NETWORK_COMMAND::QUIT );
@@ -339,25 +339,85 @@ namespace DOTL
 		}
 	}
 
-	void SFMLProcess::UpdateClient ( double dt )
+	void SFMLProcess::UpdateClient ( double dt , SOCKET clientSocket )
 	{
 		// UPDATE PLAYER 
-
 		NetworkEntity& player = game_data_.GetEntity ( player_id_ );
 
-		// get direction vector between player and mouse
-		sf::Vector2f dir ( mouse_data_.x_ - player.GetData ( ED::POS_X ) , mouse_data_.y_ - player.GetData ( ED::POS_Y ) );
-		// normalize direction
-		float length = sqrt ( dir.x * dir.x + dir.y * dir.y );
-		dir /= length;
-		// set velocity of player = speed * dir
-		player.SetVelocity ( dir.x * game_data_.player_speed_ , dir.y * game_data_.player_speed_ );
+		player_attack_timer += dt;
 
-		// move to mouse position
-		// calculate distance away
-		if ( length > game_data_.player_speed_ * dt * 0.5f )
+		// check if clicked on any entities 
+		if ( mouse_data_.pressed_ )
 		{
+			target_id_ = 0;
+			float vx , vy , length;
+			for ( auto const& entity : game_data_.entities_ )
+			{
+				if ( entity.entity_.active_ &&
+					entity.entity_.team_1_ != player.team_1_ &&
+					entity.entity_.type_ != ET::BULLET )
+				{
+					// checks if within click
+					vx = entity.interpolated_x - mouse_data_.x_;
+					vy = entity.interpolated_y - mouse_data_.y_;
+					length = sqrt ( vx * vx + vy * vy );
+
+					if ( length < mouse_data_.click_radius_ )
+					{
+						target_id_ = entity.entity_.id_;
+						break;
+					}
+				}
+			}
+		}
+
+		// if entity selected if active move to entity, else move to mouse
+		if ( game_data_.GetEntity ( target_id_ ).active_ )
+		{
+			float vx , vy , length;
+			vx = game_data_.GetEntity ( target_id_ ).GetData ( ED::POS_X ) - player.GetData ( ED::POS_X );
+			vy = game_data_.GetEntity ( target_id_ ).GetData ( ED::POS_Y ) - player.GetData ( ED::POS_Y );
+			length = sqrt ( vx * vx + vy * vy );
+
+			if ( length > player_attack_range )
+			{
+				// move towards target
+				player.SetVelocity ( ( vx / length ) * game_data_.player_speed_ , ( vy / length ) * game_data_.player_speed_ );
+			}
+			else
+			{
+				// attack target
+				player.SetVelocity ( 0 , 0 );
+				if ( player_attack_timer > player_attack_interval )
+				{
+					player_attack_timer = 0.0f;
+					// send a create bullet request to the server
+					NetworkSend ( clientSocket , NetworkPacket ( player.GetData ( ED::POS_X ) , player.GetData ( ED::POS_Y ) , target_id_ , player.team_1_ ) );
+				}
+			}
+
+			// update player movement
+			mouse_data_.x_ = player.GetData ( ED::POS_X );
+			mouse_data_.y_ = player.GetData ( ED::POS_Y );
 			player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) , player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
+		}
+		else
+		{
+			target_id_ = 0;
+			// get direction vector between player and mouse
+			sf::Vector2f dir ( mouse_data_.x_ - player.GetData ( ED::POS_X ) , mouse_data_.y_ - player.GetData ( ED::POS_Y ) );
+			// normalize direction
+			float length = sqrt ( dir.x * dir.x + dir.y * dir.y );
+			dir /= length;
+			// set velocity of player = speed * dir
+			player.SetVelocity ( dir.x * game_data_.player_speed_ , dir.y * game_data_.player_speed_ );
+
+			// move to mouse position
+			// calculate distance away
+			if ( length > game_data_.player_speed_ * dt * 0.5f )
+			{
+				player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) , player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
+			}
 		}
 
 		// increment update sequence to be used in server reconciliation

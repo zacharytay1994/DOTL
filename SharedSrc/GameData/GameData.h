@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <stack>
+#include <queue>
 #include <unordered_map>
 #include <iostream>
 
@@ -112,7 +112,7 @@ namespace DOTL
 		*	THESE VARIABLES ARE MAINLY ACCESSED BY THE SERVER
 		*/
 		uint16_t unique_id_ { 0 };
-		std::stack<uint16_t> free_ids_;
+		std::queue<uint16_t> free_ids_;
 
 		// ai states
 		std::shared_ptr<MinionAISeekTower> ai_state_minion_seek_ = std::make_shared<MinionAISeekTower> ();
@@ -143,7 +143,7 @@ namespace DOTL
 			}
 			else
 			{
-				entity_id = free_ids_.top ();
+				entity_id = free_ids_.front ();
 				free_ids_.pop ();
 				uint16_t sequence = entities_[ entity_id ].entity_.sequence_;
 				entities_[ entity_id ].entity_ = entity;
@@ -270,10 +270,18 @@ namespace DOTL
 					NetworkEntity& entity = extended_entity.entity_;
 
 					// if entity to be updated is dead remove it
-					if ( entity.health_ <= 0 )
+					if ( entity.type_ != ET::PLAYER )
 					{
-						RemoveEntity ( entity.id_ );
-						continue;
+						if ( entity.health_ <= 0 )
+						{
+							RemoveEntity ( entity.id_ );
+							continue;
+						}
+					}
+					// on player death
+					else
+					{
+
 					}
 
 					// calculate interpolated positions

@@ -18,6 +18,12 @@ namespace DOTL
 		virtual void Update ( SOCKET clientSocket , bool& connected , double unusedDT ) override;
 
 	private:
+		// player data
+		float			player_attack_range { 200.0f };
+		float			player_attack_interval { 1.0f };
+		float			player_attack_timer { 0.0f };
+		uint16_t		target_id_ { 0 };
+
 		MouseEventData	mouse_data_;
 		SFMLInstance	sfml_instance_;
 		std::thread		network_thread_;
@@ -34,6 +40,6 @@ namespace DOTL
 		void SyncGameDataFromServer ( NetworkPacket const& packet );
 
 		// player update code
-		void UpdateClient ( double dt );
+		void UpdateClient ( double dt , SOCKET clientSocket );
 	};
 }

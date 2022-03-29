@@ -15,6 +15,7 @@ namespace DOTL
 	{
 		bool pressed_ { false };
 		float x_ , y_;
+		float click_radius_ { 40.0f };
 	};
 
 	struct SFMLInstance
@@ -23,7 +24,7 @@ namespace DOTL
 
 		void PollMouseEvents ( MouseEventData& med );
 
-		void Update ( GameData& data , float dt , uint16_t playerID );
+		void Update ( GameData& data , float dt , uint16_t playerID , uint16_t targetID );
 
 		bool IsOpen ();
 
