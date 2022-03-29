@@ -27,6 +27,8 @@ namespace DOTL
 
 	void MinionAISeekTower::Update ( Statemachine* statemachine , float dt , GameData& data , NetworkEntityExtended* thisEntity )
 	{
+		( dt );
+
 		MinionAI* minion_ai = reinterpret_cast< MinionAI* >( statemachine );
 
 		float nearest_tower_max = std::numeric_limits<float>::max ();

@@ -184,7 +184,7 @@ namespace DOTL
 			{
 				// create new entity - this gives the entity a unique id and owner
 
-				NetworkEntity const& entity = server_instance_->game_data_.CreateEntity ( *reinterpret_cast< NetworkEntity* >( packet.buffer_ ) );
+				/*NetworkEntity const& entity = */server_instance_->game_data_.CreateEntity ( *reinterpret_cast< NetworkEntity* >( packet.buffer_ ) );
 
 				// relay object creation command to all clients
 

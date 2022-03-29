@@ -13,7 +13,7 @@ namespace DOTL
 		float speed_ { 100.0f };
 		float separating_force_ { 50.0f };
 		float separating_threshold_ { 100.0f };
-		
+
 		// non-tower aggro range
 		float aggro_range_ { 150.0f };
 		uint16_t aggro_id_ { 0 };
@@ -72,7 +72,7 @@ namespace DOTL
 
 	struct TowerAIDefault : public State
 	{
-		void Pre ( ) override;
+		void Pre () override;
 
 		void Update ( Statemachine* statemachine , float dt , GameData& data , NetworkEntityExtended* thisEntity ) override;
 
@@ -86,14 +86,14 @@ namespace DOTL
 	{
 		uint16_t target_id_ { 0 };
 		float speed_ { 500.0f };
-		uint16_t damage_ { 1 };
+		uint8_t damage_ { 1 };
 
 		void Reset ();
 	};
 
 	struct BulletAISeek : public State
 	{
-		void Pre ( ) override;
+		void Pre () override;
 
 		void Update ( Statemachine* statemachine , float dt , GameData& data , NetworkEntityExtended* thisEntity ) override;
 

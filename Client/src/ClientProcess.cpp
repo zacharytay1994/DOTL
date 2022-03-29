@@ -344,7 +344,7 @@ namespace DOTL
 		// UPDATE PLAYER 
 		NetworkEntity& player = game_data_.GetEntity ( player_id_ );
 
-		player_attack_timer += dt;
+		player_attack_timer += static_cast< float >( dt );
 
 		// check if clicked on any entities 
 		if ( mouse_data_.pressed_ )

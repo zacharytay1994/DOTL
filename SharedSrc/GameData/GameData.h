@@ -139,13 +139,13 @@ namespace DOTL
 				entities_.push_back ( entity );
 				++entities_.back ().entity_.sequence_;
 				entities_.back ().entity_.id_ = ++unique_id_;
-				entity_id = entities_.size () - 1;
+				entity_id = static_cast< uint16_t >( entities_.size () ) - 1;
 			}
 			else
 			{
 				entity_id = free_ids_.front ();
 				free_ids_.pop ();
-				uint16_t sequence = entities_[ entity_id ].entity_.sequence_;
+				uint64_t sequence = entities_[ entity_id ].entity_.sequence_;
 				entities_[ entity_id ].entity_ = entity;
 				entities_[ entity_id ].entity_.sequence_ = ++sequence;
 				entities_[ entity_id ].entity_.id_ = entity_id;
