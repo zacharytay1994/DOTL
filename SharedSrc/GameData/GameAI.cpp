@@ -3,9 +3,24 @@
 
 #include <iostream>
 #include <limits>
+#include <cstdlib>
 
 namespace DOTL
 {
+	void MinionAI::Reset ()
+	{
+		speed_ = 100.0f;
+		separating_force_ = 50.0f;
+		separating_threshold_ = 100.0f;
+
+		// non-tower aggro range
+		aggro_range_ = 150.0f;
+		aggro_id_ = 0;
+
+		attack_rate_ = 1.0f;
+		attack_rate_timer_ = 0.0f;
+	}
+
 	void MinionAISeekTower::Pre ()
 	{
 	}
@@ -18,6 +33,7 @@ namespace DOTL
 		float nearest_aggro_max = std::numeric_limits<float>::max ();
 		uint16_t nearest_tower_id { 0 };
 		uint16_t nearest_aggro_id { 0 };
+		float final_vel_x { 0.0f } , final_vel_y { 0.0f };
 		for ( auto const& entity : data.entities_ )
 		{
 			bool diff_team = entity.entity_.team_1_ != thisEntity->entity_.team_1_;
@@ -32,7 +48,8 @@ namespace DOTL
 				{
 					nearest_tower_max = length;
 					nearest_tower_id = entity.entity_.id_;
-					thisEntity->entity_.SetVelocity ( ( v_x / length ) * minion_ai->speed_ , ( v_y / length ) * minion_ai->speed_ );
+					final_vel_x += ( v_x / length ) * minion_ai->speed_;
+					final_vel_y += ( v_y / length ) * minion_ai->speed_;
 				}
 			}
 			// check if should switch aggro
@@ -48,7 +65,23 @@ namespace DOTL
 					nearest_aggro_id = entity.entity_.id_;
 				}
 			}
+			// add separating force
+			else if ( ( entity.entity_.type_ == ET::MINION ) && !diff_team && entity.entity_.id_ != thisEntity->entity_.id_ )
+			{
+				float v_x , v_y;
+				float length = GetDistance ( entity.entity_.GetData ( ED::POS_X ) , entity.entity_.GetData ( ED::POS_Y ) ,
+					thisEntity->entity_.GetData ( ED::POS_X ) , thisEntity->entity_.GetData ( ED::POS_Y ) , v_x , v_y );
+
+				if ( length < minion_ai->separating_threshold_ )
+				{
+					float force_scalar = minion_ai->separating_force_ * ( 1 - ( length - minion_ai->separating_threshold_ ) );
+					final_vel_x -= ( v_x / length ) * force_scalar;
+					final_vel_y -= ( v_y / length ) * force_scalar;
+				}
+			}
 		}
+
+		thisEntity->entity_.SetVelocity ( final_vel_x , final_vel_y );
 
 		// if no nearest target found and reached tower
 		if ( nearest_tower_max < minion_ai->aggro_range_ && nearest_aggro_id == 0 )
@@ -78,7 +111,7 @@ namespace DOTL
 		MinionAI* minion_ai = reinterpret_cast< MinionAI* >( statemachine );
 
 		// check if target still exists
-		if ( minion_ai->aggro_id_ != 0 )
+		if ( data.GetEntity ( minion_ai->aggro_id_ ).active_ )
 		{
 			// check if still within aggro range
 			float v_x , v_y;
@@ -100,17 +133,32 @@ namespace DOTL
 			}
 			else
 			{
+				minion_ai->aggro_id_ = 0;
 				statemachine->SwitchState ( data.ai_state_minion_seek_ );
 			}
 		}
 		else
 		{
+			minion_ai->aggro_id_ = 0;
 			statemachine->SwitchState ( data.ai_state_minion_seek_ );
 		}
 	}
 
 	void MinionAIAttack::Post ()
 	{
+	}
+
+	void TowerAI::Reset ()
+	{
+		spawn_interval_ = 5.0f;
+		spawn_timer_ = 0.0f;
+		spawn_amount_ = 2;
+
+		attack_radius_ = 300.0f;
+		attack_rate_ = 1.0f;
+		attack_rate_timer_ = 0.0f;
+
+		spawner_ = true;
 	}
 
 	void TowerAIDefault::Pre ()
@@ -135,7 +183,7 @@ namespace DOTL
 				// spawn some minions
 				for ( auto i = 0; i < tower_ai->spawn_amount_; ++i )
 				{
-					data.CreateEntity ( ET::MINION , thisEntity->entity_.GetData ( ED::POS_X ) , thisEntity->entity_.GetData ( ED::POS_Y ) , thisEntity->entity_.team_1_ );
+					data.CreateEntity ( ET::MINION , thisEntity->entity_.GetData ( ED::POS_X ) + ( rand () % 20 ) , thisEntity->entity_.GetData ( ED::POS_Y ) + ( rand () % 20 ) , thisEntity->entity_.team_1_ );
 				}
 			}
 		}
@@ -189,6 +237,13 @@ namespace DOTL
 	{
 	}
 
+	void BulletAI::Reset ()
+	{
+		target_id_ = 0;
+		speed_ = 500.0f;
+		damage_ = 1;
+	}
+
 	void BulletAISeek::Pre ()
 	{
 	}
@@ -198,7 +253,7 @@ namespace DOTL
 		BulletAI* bullet_ai = reinterpret_cast< BulletAI* >( statemachine );
 
 		// seek towards target if id != 0, else destroy
-		if ( bullet_ai->target_id_ > 0 )
+		if ( data.GetEntity ( bullet_ai->target_id_ ).active_ )
 		{
 			NetworkEntity& target = data.GetEntity ( bullet_ai->target_id_ );
 
@@ -215,6 +270,10 @@ namespace DOTL
 				if ( target.health_ > 0 )
 				{
 					target.health_ -= bullet_ai->damage_;
+					if ( target.health_ < 0 )
+					{
+						target.health_ = 0;
+					}
 				}
 
 				// destroy bullet

@@ -137,6 +137,7 @@ namespace DOTL
 			if ( free_ids_.empty () )
 			{
 				entities_.push_back ( entity );
+				++entities_.back ().entity_.sequence_;
 				entities_.back ().entity_.id_ = ++unique_id_;
 				entity_id = entities_.size () - 1;
 			}
@@ -144,14 +145,16 @@ namespace DOTL
 			{
 				entity_id = free_ids_.top ();
 				free_ids_.pop ();
+				uint16_t sequence = entities_[ entity_id ].entity_.sequence_;
 				entities_[ entity_id ].entity_ = entity;
+				entities_[ entity_id ].entity_.sequence_ = ++sequence;
 				entities_[ entity_id ].entity_.id_ = entity_id;
 			}
 
 			NetworkEntityExtended& entity_extended = GetEntityExtended ( entity_id );
 			entity_extended.entity_.owner_ = owner;
 			entity_extended.entity_.active_ = true;
-			entity_extended.entity_.sequence_ = 0;
+			//entity_extended.entity_.sequence_ = 0;
 
 			// type specific changes
 			switch ( entity.type_ )
@@ -200,8 +203,10 @@ namespace DOTL
 			{
 				entities_.resize ( entity.id_ + 1 );
 			}
-			// set initial position if first time initialize
-			if ( !entities_[ entity.id_ ].entity_.active_ )
+			// sequence is used by all entities beside players to keep track of entity version,
+			// players use sequence for server reconciliation
+			// set interpolated position
+			if ( entities_[ entity.id_ ].entity_.sequence_ != entity.sequence_ && entity.type_ != ET::PLAYER )
 			{
 				entities_[ entity.id_ ].interpolated_x = entity.GetData ( ED::POS_X );
 				entities_[ entity.id_ ].interpolated_y = entity.GetData ( ED::POS_Y );
@@ -215,6 +220,16 @@ namespace DOTL
 			if ( id < entities_.size () )
 			{
 				entities_[ id ].entity_.active_ = false;
+
+				entities_[ id ].entity_.SetPosition ( 0.0f , 0.0f );
+				entities_[ id ].interpolated_x = 0.0f;
+				entities_[ id ].interpolated_y = 0.0f;
+				entities_[ id ].entity_.SetVelocity ( 0.0f , 0.0f );
+
+				entities_[ id ].tower_ai_.Reset ();
+				entities_[ id ].minion_ai_.Reset ();
+				entities_[ id ].bullet_ai_.Reset ();
+
 				free_ids_.push ( id );
 			}
 		}
@@ -253,6 +268,13 @@ namespace DOTL
 				if ( extended_entity.entity_.active_ )
 				{
 					NetworkEntity& entity = extended_entity.entity_;
+
+					// if entity to be updated is dead remove it
+					if ( entity.health_ <= 0 )
+					{
+						RemoveEntity ( entity.id_ );
+						continue;
+					}
 
 					// calculate interpolated positions
 					extended_entity.interpolated_x = my_lerp2 ( extended_entity.interpolated_x , extended_entity.entity_.GetData ( ED::POS_X ) , lerp_val * dt * 50 );

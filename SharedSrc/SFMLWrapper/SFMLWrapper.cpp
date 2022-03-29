@@ -56,13 +56,13 @@ namespace DOTL
 	{
 		window_->clear ();
 
-		float bar_x { 120.0f };
-		float bar_y { 15.0f };
+		float bar_x { 40.0f };
+		float bar_y { 5.0f };
 
 		// draw all entities as circles
 		sf::CircleShape shape ( 10 );
-		sf::RectangleShape hp_bar_border ( sf::Vector2f ( bar_x , 3 ) );
-		sf::RectangleShape hp_bar_inner ( sf::Vector2f ( bar_x , 3 ) );
+		sf::RectangleShape hp_bar_border ( sf::Vector2f ( bar_x , bar_y ) );
+		sf::RectangleShape hp_bar_inner ( sf::Vector2f ( bar_x , bar_y ) );
 		hp_bar_border.setOutlineThickness ( 1 );
 		hp_bar_border.setFillColor ( sf::Color::Transparent );
 		hp_bar_inner.setFillColor ( sf::Color::Green );
@@ -84,6 +84,7 @@ namespace DOTL
 					extended_entity.interpolated_x = my_lerp ( extended_entity.interpolated_x , extended_entity.entity_.GetData ( ED::POS_X ) , lerp_val * dt * 50 );
 					extended_entity.interpolated_y = my_lerp ( extended_entity.interpolated_y , extended_entity.entity_.GetData ( ED::POS_Y ) , lerp_val * dt * 50 );
 					position = sf::Vector2f ( extended_entity.interpolated_x , extended_entity.interpolated_y );
+					//position = sf::Vector2f ( extended_entity.entity_.GetData ( ED::POS_X ) , extended_entity.entity_.GetData ( ED::POS_Y ) );
 				}
 				else
 				{
@@ -137,18 +138,22 @@ namespace DOTL
 					break;
 				}
 				}
-				window_->draw ( text_ );
 
-				// draw bar
-				position.y -= 2.0f * font_offset_;
-				hp_bar_border.setPosition ( position );
-				window_->draw ( hp_bar_border );
+				if ( extended_entity.entity_.type_ != ET::BULLET )
+				{
+					window_->draw ( text_ );
 
-				// calculate inner hp bar
-				float hp_ratio = static_cast< float >( extended_entity.entity_.health_ ) / static_cast< float >( extended_entity.entity_.max_health_ );
-				hp_bar_inner.setPosition ( position );
-				hp_bar_inner.setSize ( sf::Vector2f ( hp_ratio * bar_x , bar_y ) );
-				window_->draw ( hp_bar_inner );
+					// draw bar
+					position.y -= 2.0f * font_offset_;
+					hp_bar_border.setPosition ( position );
+					window_->draw ( hp_bar_border );
+
+					// calculate inner hp bar
+					float hp_ratio = static_cast< float >( extended_entity.entity_.health_ ) / static_cast< float >( extended_entity.entity_.max_health_ );
+					hp_bar_inner.setPosition ( position );
+					hp_bar_inner.setSize ( sf::Vector2f ( hp_ratio * bar_x , bar_y ) );
+					window_->draw ( hp_bar_inner );
+				}
 			}
 		}
 

@@ -64,7 +64,7 @@ namespace DOTL
 					NetworkPacket packet;
 					packet.type_ = PACKET_TYPE::SYNC_ENTITY;
 					memcpy ( packet.buffer_ , &player , sizeof ( NetworkEntity ) );
-					NetworkSend ( clientSocket , packet ); // error here
+					NetworkSend ( clientSocket , packet );
 				}
 				else
 				{
