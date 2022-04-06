@@ -19,11 +19,8 @@ namespace DOTL
 			text_.setCharacterSize( font_size_ );
 		}
 
+		// init background ( the environment )
 		background_.SetPosition( 0.0f, 0.0f );
-		float scale_x = static_cast< float >( window_->getSize().x ) / static_cast< float >( background_.GetSprite().getTexture()->getSize().x );
-		float scale_y = static_cast< float >( window_->getSize().y ) / static_cast< float >( background_.GetSprite().getTexture()->getSize().y );
-		background_.SetScale( scale_x, scale_y );
-
 	}
 
 	void SFMLInstance::PollMouseEvents( MouseEventData& med )
@@ -60,16 +57,13 @@ namespace DOTL
 	{
 		window_->clear();
 
+		// draw background 
 		window_->draw( background_.GetSprite() );
 
 		float bar_x{ 40.0f };
 		float bar_y{ 5.0f };
 
-		// draw all entities as circles
-		sf::CircleShape shape( 10 );
-		shape.setOrigin( shape.getRadius(), shape.getRadius() );
-
-		sf::CircleShape selected_outline( 16 );
+		sf::CircleShape selected_outline( 10 );
 		selected_outline.setOrigin( selected_outline.getRadius(), selected_outline.getRadius() );
 		selected_outline.setFillColor( sf::Color::Transparent );
 		selected_outline.setOutlineThickness( 3 );
@@ -98,34 +92,109 @@ namespace DOTL
 					extended_entity.interpolated_x = my_lerp( extended_entity.interpolated_x, extended_entity.entity_.GetData( ED::POS_X ), lerp_val * dt * 50 );
 					extended_entity.interpolated_y = my_lerp( extended_entity.interpolated_y, extended_entity.entity_.GetData( ED::POS_Y ), lerp_val * dt * 50 );
 					position = sf::Vector2f( extended_entity.interpolated_x, extended_entity.interpolated_y );
-					//position = sf::Vector2f ( extended_entity.entity_.GetData ( ED::POS_X ) , extended_entity.entity_.GetData ( ED::POS_Y ) );
 				}
 				else
 				{
 					position = sf::Vector2f( extended_entity.entity_.GetData( ED::POS_X ), extended_entity.entity_.GetData( ED::POS_Y ) );
 				}
 
-				// draw entity
-				//position = sf::Vector2f ( extended_entity.entity_.GetData ( ED::POS_X ) , extended_entity.entity_.GetData ( ED::POS_Y ) );
-				shape.setPosition( position );
+				// draw entity for team 1 
 				if ( extended_entity.entity_.team_1_ )
 				{
-					shape.setFillColor( sf::Color::Red );
+					switch ( extended_entity.entity_.type_ )
+					{
+					case ( ET::MINION ):
+						{
+							//draw pink minion
+							minion_pink_.SetPosition( position.x, position.y );
+							minion_pink_.SetScale( 0.75f, 0.75f );
+							minion_pink_.GetSprite().setOrigin( sf::Vector2f(
+								static_cast< float >( minion_pink_.GetSprite().getTexture()->getSize().x ) / 2.0f,
+								static_cast< float >( minion_pink_.GetSprite().getTexture()->getSize().y ) / 2.0f ) );
+							window_->draw( minion_pink_.GetSprite() );
+							break;
+						}
+					case ( ET::TOWER ):
+						{
+							// draw pink tower
+							tower_pink_.SetPosition( position.x, position.y );
+							tower_pink_.GetSprite().setOrigin( sf::Vector2f(
+								static_cast< float >( tower_pink_.GetSprite().getTexture()->getSize().x ) / 2.0f,
+								static_cast< float >( tower_pink_.GetSprite().getTexture()->getSize().y ) / 2.0f ) );
+							window_->draw( tower_pink_.GetSprite() );
+							break;
+						}
+					case ( ET::PLAYER ):
+						{
+							// draw pink player
+							player_pink_.SetPosition( position.x, position.y );
+							player_pink_.GetSprite().setOrigin( sf::Vector2f( static_cast< float >( player_pink_.GetSprite().getTexture()->getSize().x ) / 2.0f,
+																static_cast< float >( player_pink_.GetSprite().getTexture()->getSize().y ) / 2.0f ) );
+							window_->draw( player_pink_.GetSprite() );
+							break;
+						}
+					case ( ET::BULLET ):
+						{
+							// draw pink bullet
+							bullet_pink_.SetPosition( position.x, position.y );
+							bullet_pink_.SetScale( 0.5f, 0.5f );
+							bullet_pink_.GetSprite().setOrigin( sf::Vector2f(
+								static_cast< float >( bullet_pink_.GetSprite().getTexture()->getSize().x ) / 2.0f,
+								static_cast< float >( bullet_pink_.GetSprite().getTexture()->getSize().y ) / 2.0f ) );
+							window_->draw( bullet_pink_.GetSprite() );
+							break;
+						}
+					}
 				}
-				else
+				else // draw entity for team 2
 				{
-					shape.setFillColor( sf::Color::Blue );
+					switch ( extended_entity.entity_.type_ )
+					{
+					case ( ET::MINION ):
+						{
+							//draw blue minion
+							minion_blue_.SetPosition( position.x, position.y );
+							minion_blue_.SetScale( 0.75f, 0.75f );
+							minion_blue_.GetSprite().setOrigin( sf::Vector2f(
+								static_cast< float >( minion_blue_.GetSprite().getTexture()->getSize().x ) / 2.0f,
+								static_cast< float >( minion_blue_.GetSprite().getTexture()->getSize().y ) / 2.0f ) );
+							window_->draw( minion_blue_.GetSprite() );
+							break;
+						}
+					case ( ET::TOWER ):
+						{
+							// draw blue tower
+							tower_blue_.SetPosition( position.x, position.y );
+							tower_blue_.GetSprite().setOrigin( sf::Vector2f(
+								static_cast< float >( tower_blue_.GetSprite().getTexture()->getSize().x ) / 2.0f,
+								static_cast< float >( tower_blue_.GetSprite().getTexture()->getSize().y ) / 2.0f ) );
+							window_->draw( tower_blue_.GetSprite() );
+							break;
+						}
+					case ( ET::PLAYER ):
+						{
+							// draw blue player
+							player_blue_.SetPosition( position.x, position.y );
+							player_blue_.GetSprite().setOrigin( sf::Vector2f(
+								static_cast< float >( player_blue_.GetSprite().getTexture()->getSize().x ) / 2.0f,
+								static_cast< float >( player_blue_.GetSprite().getTexture()->getSize().y ) / 2.0f ) );
+							window_->draw( player_blue_.GetSprite() );
+							break;
+						}
+					case ( ET::BULLET ):
+						{
+							// draw blue bullet
+							bullet_blue_.SetPosition( position.x, position.y );
+							bullet_blue_.SetScale( 0.5f, 0.5f );
+							bullet_blue_.GetSprite().setOrigin( sf::Vector2f(
+								static_cast< float >( bullet_blue_.GetSprite().getTexture()->getSize().x ) / 2.0f,
+								static_cast< float >( bullet_blue_.GetSprite().getTexture()->getSize().y ) / 2.0f ) );
+							window_->draw( bullet_blue_.GetSprite() );
+						}
+					}
 				}
-				window_->draw( shape );
 
-				if ( extended_entity.entity_.type_ == ET::TOWER )
-				{
-					tower_pink_.SetPosition( position.x, position.y );
-					tower_pink_.SetScale( 0.5f, 0.5f );
-					tower_pink_.GetSprite().setOrigin( sf::Vector2f( static_cast< float >( tower_pink_.GetSprite().getTexture()->getSize().x ) / 2.0f, static_cast< float >( tower_pink_.GetSprite().getTexture()->getSize().y ) / 2.0f ) );
-					window_->draw( tower_pink_.GetSprite() );
-				}
-
+				// when object is selected , draw an outline
 				if ( extended_entity.entity_.id_ == targetID )
 				{
 					selected_outline.setPosition( position );
@@ -134,7 +203,7 @@ namespace DOTL
 
 				// draw name
 				position.y += font_offset_;
-				text_.setPosition( position );
+
 				switch ( extended_entity.entity_.type_ )
 				{
 				case ( ET::MINION ):
@@ -154,7 +223,6 @@ namespace DOTL
 					}
 				case ( ET::PLAYER ):
 					{
-						text_.setFillColor( sf::Color::White );
 						if ( data.player_names_.find( extended_entity.entity_.id_ ) != data.player_names_.end() )
 						{
 							text_.setString( data.player_names_.at( extended_entity.entity_.id_ ) );
@@ -167,12 +235,25 @@ namespace DOTL
 					}
 				}
 
+				// set text colour for different team
+				if ( extended_entity.entity_.team_1_ )
+				{
+					text_.setFillColor( sf::Color( 255, 182, 213, 225 ) ); // pastel pink colour
+				}
+				else
+				{
+					text_.setFillColor( sf::Color( 167, 199, 255, 255 ) ); // pastel blue colour
+				}
+
 				if ( extended_entity.entity_.type_ != ET::BULLET )
 				{
+					// setting the string to display, you can use getLocalBounds() to get the bounding rect 
+					sf::FloatRect bounds = text_.getLocalBounds();
+					text_.setPosition( position.x - ( bounds.width / 2.0f ), position.y + 20.0f );
 					window_->draw( text_ );
 
-					// draw bar
-					position.y -= 2.0f * font_offset_;
+					// draw bar (JM: added magic number 3.5 to increse the height of the health bar)
+					position.y -= 3.5f * font_offset_;
 					hp_bar_border.setPosition( position );
 					window_->draw( hp_bar_border );
 
@@ -184,9 +265,7 @@ namespace DOTL
 				}
 			}
 		}
-
 		window_->display();
-
 		return;
 	}
 
@@ -225,8 +304,4 @@ namespace DOTL
 	{
 		return sprite_;
 	}
-	//sf::Texture SFMLSprite::GetTexture()
-	//{
-	//	return texture_;
-	//}
 }

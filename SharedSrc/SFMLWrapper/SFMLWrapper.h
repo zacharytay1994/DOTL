@@ -26,7 +26,7 @@ namespace DOTL
 
 		void SetScale( float x, float y );
 
-		sf::Sprite & GetSprite();
+		sf::Sprite& GetSprite();
 
 		//sf::Texture GetTexture();
 
@@ -54,7 +54,13 @@ namespace DOTL
 
 		SFMLSprite background_{ "Assets/Arts/Background_v1_20220403.png" };
 		SFMLSprite tower_pink_{ "Assets/Arts/Tower_Pink_v1_20220403.png" };
-
+		SFMLSprite tower_blue_{ "Assets/Arts/Tower_Blue_v1_20220403.png" };
+		SFMLSprite player_pink_{ "Assets/Arts/Player_Pink_v1_20220403.png" };
+		SFMLSprite player_blue_{ "Assets/Arts/Player_Blue_v1_20220403.png" };
+		SFMLSprite minion_pink_{ "Assets/Arts/Minion_Pink_v1_20220403.png" };
+		SFMLSprite minion_blue_{ "Assets/Arts/Minion_Blue_v1_20220403.png" };
+		SFMLSprite bullet_pink_{ "Assets/Arts/Bullet_Pink_v1_20220403.png" };
+		SFMLSprite bullet_blue_{ "Assets/Arts/Bullet_Blue_v1_20220403.png" };
 
 		static constexpr int font_size_{ 18 };
 		static constexpr int font_offset_{ 25 };
