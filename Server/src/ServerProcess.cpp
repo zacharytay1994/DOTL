@@ -146,14 +146,14 @@ namespace DOTL
 					// create team 1 towers - make first tower a spawner
 					uint16_t t1_first_tower = server_instance_->game_data_.CreateEntity ( ET::TOWER , 100 , 100 , false ).id_;
 					server_instance_->game_data_.GetEntityExtended ( t1_first_tower ).tower_ai_.spawner_ = true;
-					server_instance_->game_data_.CreateEntity ( ET::TOWER , 300 , 300 , false );
+					server_instance_->game_data_.CreateEntity ( ET::TOWER , 200 , 200 , false );
 
 					// create team 2 turrets
-					uint16_t t2_first_tower = server_instance_->game_data_.CreateEntity ( ET::TOWER , 1100 , 1100 , true ).id_;
+					uint16_t t2_first_tower = server_instance_->game_data_.CreateEntity ( ET::TOWER , 700 , 700 , true ).id_;
 					server_instance_->game_data_.GetEntityExtended ( t2_first_tower ).tower_ai_.spawner_ = true;
-					server_instance_->game_data_.CreateEntity ( ET::TOWER , 900 , 900 , true );
+					server_instance_->game_data_.CreateEntity ( ET::TOWER , 600 , 600 , true );
 
-					float red_x { 150 } , red_y { 150 } , blue_x { 1050 } , blue_y { 1050 };
+					float red_x { 100 } , red_y { 100 } , blue_x { 700 } , blue_y { 700 };
 					// set player teams
 					bool team { true };
 					for ( auto const& client : server_instance_->GetClients () )

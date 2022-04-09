@@ -57,7 +57,7 @@ namespace DOTL
 		memcpy ( buffer_ , &x , sizeof ( float ) );
 		memcpy ( buffer_ + sizeof ( float ) , &y , sizeof ( float ) );
 		memcpy ( buffer_ + sizeof ( float ) + sizeof ( float ) , &target , sizeof ( uint16_t ) );
-		memcpy ( buffer_ + sizeof ( float ) + sizeof ( float ) * sizeof ( uint16_t ) , &team , sizeof ( bool ) );
+		memcpy ( buffer_ + sizeof ( float ) + sizeof ( float ) + sizeof ( uint16_t ) , &team , sizeof ( bool ) );
 	}
 
 	int NetworkReceive ( SOCKET socket , char* buffer , int size )

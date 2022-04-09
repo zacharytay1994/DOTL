@@ -26,10 +26,7 @@ int main ()
 	{
 		ip_address = "127.0.0.1";
 	}
-
-	std::shared_ptr<DOTL::SFMLProcess> process = 
-		std::make_shared<DOTL::SFMLProcess> ( 1200 , 1200 , "Client" );
-
+	std::shared_ptr<DOTL::SFMLProcess> process = std::make_shared<DOTL::SFMLProcess> ( 800 , 800 , "Client" );
 	DOTL::ClientInstance_WinSock2 client_instance ( ip_address.c_str () , 5050 , process );
 
 	if ( !client_instance.SetupSuccess () )
