@@ -117,8 +117,11 @@ namespace DOTL
 		{
 			// check if still within aggro range
 			float v_x , v_y;
-			float length = GetDistance ( data.GetEntity ( minion_ai->aggro_id_ ).GetData ( ED::POS_X ) , data.GetEntity ( minion_ai->aggro_id_ ).GetData ( ED::POS_Y ) ,
-				thisEntity->entity_.GetData ( ED::POS_X ) , thisEntity->entity_.GetData ( ED::POS_Y ) , v_x , v_y );
+			float length = GetDistance ( 
+				data.GetEntity ( minion_ai->aggro_id_ ).GetData ( ED::POS_X ) ,
+				data.GetEntity ( minion_ai->aggro_id_ ).GetData ( ED::POS_Y ) ,
+				thisEntity->entity_.GetData ( ED::POS_X ) , 
+				thisEntity->entity_.GetData ( ED::POS_Y ) , v_x , v_y );
 
 			if ( length < minion_ai->aggro_range_ )
 			{
@@ -130,7 +133,11 @@ namespace DOTL
 				{
 					minion_ai->attack_rate_timer_ = 0.0f;
 
-					CreateBullet ( data , thisEntity->entity_.GetData ( ED::POS_X ) , thisEntity->entity_.GetData ( ED::POS_Y ) , thisEntity->entity_.team_1_ , minion_ai->aggro_id_ );
+					CreateBullet ( 
+						data , 
+						thisEntity->entity_.GetData ( ED::POS_X ) ,
+						thisEntity->entity_.GetData ( ED::POS_Y ) , 
+						thisEntity->entity_.team_1_ , minion_ai->aggro_id_ );
 				}
 			}
 			else
@@ -185,7 +192,11 @@ namespace DOTL
 				// spawn some minions
 				for ( auto i = 0; i < tower_ai->spawn_amount_; ++i )
 				{
-					data.CreateEntity ( ET::MINION , thisEntity->entity_.GetData ( ED::POS_X ) + ( rand () % 20 ) , thisEntity->entity_.GetData ( ED::POS_Y ) + ( rand () % 20 ) , thisEntity->entity_.team_1_ );
+					data.CreateEntity ( 
+						ET::MINION ,
+						thisEntity->entity_.GetData ( ED::POS_X ) + ( rand () % 20 ) ,
+						thisEntity->entity_.GetData ( ED::POS_Y ) + ( rand () % 20 ) , 
+						thisEntity->entity_.team_1_ );
 				}
 			}
 		}
@@ -206,7 +217,10 @@ namespace DOTL
 			for ( auto const& entity : data.entities_ )
 			{
 				// shoots everything that fulfills this condition
-				if ( !entity.entity_.active_ || entity.entity_.type_ == ET::TOWER || entity.entity_.type_ == ET::BULLET || entity.entity_.type_ == ET::COUNT )
+				if ( !entity.entity_.active_ ||
+					entity.entity_.type_ == ET::TOWER ||
+					entity.entity_.type_ == ET::BULLET ||
+					entity.entity_.type_ == ET::COUNT )
 				{
 					continue;
 				}
@@ -215,7 +229,8 @@ namespace DOTL
 				float length = GetDistance ( entity.entity_.GetData ( ED::POS_X ) , entity.entity_.GetData ( ED::POS_Y ) ,
 					thisEntity->entity_.GetData ( ED::POS_X ) , thisEntity->entity_.GetData ( ED::POS_Y ) , v_x , v_y );
 
-				if ( length < nearest_target_max && length < tower_ai->attack_radius_ && thisEntity->entity_.team_1_ != entity.entity_.team_1_ )
+				if ( length < nearest_target_max && length < tower_ai->attack_radius_ && 
+					thisEntity->entity_.team_1_ != entity.entity_.team_1_ )
 				{
 					nearest_target_max = length;
 					nearest_target_id_ = entity.entity_.id_;
@@ -225,11 +240,11 @@ namespace DOTL
 			// check if any target found
 			if ( nearest_target_id_ != 0 )
 			{
-				//NetworkEntity const& bullet = data.CreateEntity ( ET::BULLET , thisEntity->entity_.GetData ( ED::POS_X ) , thisEntity->entity_.GetData ( ED::POS_Y ) , thisEntity->entity_.team_1_ );
-				//// set bullet target
-				//data.GetEntityExtended ( bullet.id_ ).bullet_ai_.target_id_ = nearest_target_id_;
-
-				CreateBullet ( data , thisEntity->entity_.GetData ( ED::POS_X ) , thisEntity->entity_.GetData ( ED::POS_Y ) , thisEntity->entity_.team_1_ , nearest_target_id_ );
+				CreateBullet ( 
+					data ,
+					thisEntity->entity_.GetData ( ED::POS_X ) ,
+					thisEntity->entity_.GetData ( ED::POS_Y ) ,
+					thisEntity->entity_.team_1_ , nearest_target_id_ );
 			}
 		}
 

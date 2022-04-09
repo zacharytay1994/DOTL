@@ -182,13 +182,7 @@ namespace DOTL
 			*/
 			case ( PACKET_TYPE::CREATE ):
 			{
-				// create new entity - this gives the entity a unique id and owner
-
-				/*NetworkEntity const& entity = */server_instance_->game_data_.CreateEntity ( *reinterpret_cast< NetworkEntity* >( packet.buffer_ ) );
-
-				// relay object creation command to all clients
-
-				//SendNetworkPacketToAll ( NetworkPacket ( entity ) );
+				server_instance_->game_data_.CreateEntity ( *reinterpret_cast< NetworkEntity* >( packet.buffer_ ) );
 				break;
 			}
 

@@ -285,18 +285,19 @@ namespace DOTL
 					}
 
 					// calculate interpolated positions
-					extended_entity.interpolated_x = my_lerp2 ( extended_entity.interpolated_x , extended_entity.entity_.GetData ( ED::POS_X ) , lerp_val * dt * 50 );
-					extended_entity.interpolated_y = my_lerp2 ( extended_entity.interpolated_y , extended_entity.entity_.GetData ( ED::POS_Y ) , lerp_val * dt * 50 );
+					extended_entity.interpolated_x = my_lerp2 ( extended_entity.interpolated_x ,
+						extended_entity.entity_.GetData ( ED::POS_X ) , lerp_val * dt * 50 );
+
+					extended_entity.interpolated_y = my_lerp2 ( extended_entity.interpolated_y , 
+						extended_entity.entity_.GetData ( ED::POS_Y ) , lerp_val * dt * 50 );
 
 					// increment entity update sequence if its not the player,
 					// clients update their own player sequence
+					// update ai
 					switch ( entity.type_ )
 					{
 					case ( ET::MINION ):
 					{
-						// update position with velocity
-						/*entity.SetPosition ( entity.GetData ( ED::POS_X ) + entity.GetData ( ED::VEL_X ) * dt , entity.GetData ( ED::POS_Y ) + entity.GetData ( ED::VEL_Y ) );
-						++entity.sequence_;*/
 						extended_entity.minion_ai_.Update ( dt , *this , &extended_entity );
 
 						// move position with velocity

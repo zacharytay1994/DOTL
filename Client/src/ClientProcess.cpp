@@ -46,14 +46,12 @@ namespace DOTL
 			// poll events here
 			sfml_instance_.PollMouseEvents ( mouse_data_ );
 
-			// do player logic here
-			// player update
+			// do player logic here, i.e. player update
 			// check if player id is valid and exist
 			if ( game_data_.player_names_.find ( player_id_ ) != game_data_.player_names_.end () &&
 				player_id_ < game_data_.entities_.size () )
 			{
-				// set to vector code
-				//game_data_.UpdateClient ( player_id_ , static_cast< float >( dt ) , mouse_data_ );
+				// client side prediction, applies client side changes before syncing to the server
 				UpdateClient ( dt , clientSocket );
 
 				// sync - pass to server the player position
@@ -160,7 +158,12 @@ namespace DOTL
 				case ( PACKET_TYPE::TIME_STAMP ):
 				{
 					uint64_t old_time_stamp = game_data_.time_stamp_;
-					game_data_.time_stamp_ = *reinterpret_cast< uint64_t* >( packet.buffer_ );
+					game_data_.time_stamp_ = 
+						std::chrono::system_clock::now ().time_since_epoch () / std::chrono::milliseconds ( 1 );
+
+					/*float network_latency = 
+						game_data_.time_stamp_ - *reinterpret_cast< uint64_t* >( packet.buffer_ ) * 0.001f;*/
+
 					if ( game_data_.time_stamp_ > 0 )
 					{
 						game_data_.sync_delta_time_ = static_cast< double >( game_data_.time_stamp_ - old_time_stamp ) * 0.001;
@@ -392,14 +395,23 @@ namespace DOTL
 				{
 					player_attack_timer = 0.0f;
 					// send a create bullet request to the server
-					NetworkSend ( clientSocket , NetworkPacket ( player.GetData ( ED::POS_X ) , player.GetData ( ED::POS_Y ) , target_id_ , player.team_1_ ) );
+					NetworkSend ( 
+						clientSocket ,
+						NetworkPacket ( 
+							player.GetData ( ED::POS_X ) , 
+							player.GetData ( ED::POS_Y ) , 
+							target_id_ , 
+							player.team_1_ 
+						) 
+					);
 				}
 			}
 
 			// update player movement
 			mouse_data_.x_ = player.GetData ( ED::POS_X );
 			mouse_data_.y_ = player.GetData ( ED::POS_Y );
-			player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) , player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
+			player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) ,
+				player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
 		}
 		else
 		{
@@ -416,7 +428,8 @@ namespace DOTL
 			// calculate distance away
 			if ( length > game_data_.player_speed_ * dt * 0.5f )
 			{
-				player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) , player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
+				player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) ,
+					player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
 			}
 		}
 
