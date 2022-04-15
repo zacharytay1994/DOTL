@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "GameAI.h"
+#include <SFML/System/Vector2.hpp>
 
 namespace DOTL
 {
@@ -74,6 +75,8 @@ namespace DOTL
 	{
 		NetworkEntity entity_;
 		float interpolated_x { 0 } , interpolated_y { 0 };
+		float m_player_non_cp_x { 0 } , m_player_non_cp_y { 0 };
+		float sort_y { 0.0f };
 
 		/*
 			These variables are used by the server to process entity AI
@@ -259,10 +262,22 @@ namespace DOTL
 			return static_cast< float >( x + ( ( y - x ) * val ) );
 		}
 
+		sf::Vector2f server_lerp ( sf::Vector2f start , sf::Vector2f end , float dt , float spd )
+		{
+			sf::Vector2f dir = end - start;
+			float length = sqrt ( dir.x * dir.x + dir.y * dir.y );
+			if ( length > spd * dt * 2.0f )
+			{
+				return start + ( dir / length ) * spd * dt;
+			}
+			return end;
+		}
+
 		void UpdateServer ( float dt )
 		{
 			// Game entities logic update
 			float lerp_val = static_cast< float >( sync_delta_time_ > 1.0f ? 1.0f : sync_delta_time_ );
+			//float lerp_val = static_cast< float >( sync_delta_time_ ) * dt;
 			for ( auto& extended_entity : entities_ )
 			{
 				if ( extended_entity.entity_.active_ )
@@ -285,11 +300,32 @@ namespace DOTL
 					}
 
 					// calculate interpolated positions
-					extended_entity.interpolated_x = my_lerp2 ( extended_entity.interpolated_x ,
-						extended_entity.entity_.GetData ( ED::POS_X ) , lerp_val * dt * 50 );
+					//extended_entity.interpolated_x = my_lerp2 ( extended_entity.interpolated_x ,
+					//	extended_entity.entity_.GetData ( ED::POS_X ) , /*lerp_val * dt * 50*/ dt );
 
-					extended_entity.interpolated_y = my_lerp2 ( extended_entity.interpolated_y , 
-						extended_entity.entity_.GetData ( ED::POS_Y ) , lerp_val * dt * 50 );
+					//extended_entity.interpolated_y = my_lerp2 ( extended_entity.interpolated_y , 
+					//	extended_entity.entity_.GetData ( ED::POS_Y ) , /*lerp_val * dt * 50*/ dt );
+
+					sf::Vector2f start { extended_entity.interpolated_x, extended_entity.interpolated_y };
+					sf::Vector2f end ( extended_entity.entity_.GetData ( ED::POS_X ) , extended_entity.entity_.GetData ( ED::POS_Y ) );
+
+					float speed { 0.0f };
+					switch ( extended_entity.entity_.type_ )
+					{
+					case ( ET::MINION ):
+						speed = extended_entity.minion_ai_.speed_;
+						break;
+					case ( ET::BULLET ):
+						speed = extended_entity.bullet_ai_.speed_;
+						break;
+					case ( ET::PLAYER ):
+						speed = player_speed_;
+						break;
+					}
+
+					start = server_lerp ( start , end , dt , speed );
+					extended_entity.interpolated_x = start.x;
+					extended_entity.interpolated_y = start.y;
 
 					// increment entity update sequence if its not the player,
 					// clients update their own player sequence

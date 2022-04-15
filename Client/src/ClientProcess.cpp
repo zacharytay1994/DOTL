@@ -53,6 +53,7 @@ namespace DOTL
 			{
 				// client side prediction, applies client side changes before syncing to the server
 				UpdateClient ( dt , clientSocket );
+				UpdateCheckboxes ( dt );
 
 				// sync - pass to server the player position
 				if ( time > sync_interval )
@@ -71,7 +72,9 @@ namespace DOTL
 			}
 
 			// sfml render
-			sfml_instance_.Update ( game_data_ , static_cast< float >( dt ) , player_id_ , target_id_ );
+			sfml_instance_.Update ( game_data_ , static_cast< float >( dt ) , player_id_ , target_id_ ,
+				m_checkbox_x , m_checkbox_y , m_checkbox_spacing ,
+				m_client_side_prediction , m_server_reconciliation , m_entity_interpolation );
 		}
 
 		NetworkPacket packet ( NETWORK_COMMAND::QUIT );
@@ -158,10 +161,10 @@ namespace DOTL
 				case ( PACKET_TYPE::TIME_STAMP ):
 				{
 					uint64_t old_time_stamp = game_data_.time_stamp_;
-					game_data_.time_stamp_ = 
+					game_data_.time_stamp_ =
 						std::chrono::system_clock::now ().time_since_epoch () / std::chrono::milliseconds ( 1 );
 
-					/*float network_latency = 
+					/*float network_latency =
 						game_data_.time_stamp_ - *reinterpret_cast< uint64_t* >( packet.buffer_ ) * 0.001f;*/
 
 					if ( game_data_.time_stamp_ > 0 )
@@ -184,6 +187,10 @@ namespace DOTL
 					float x = *reinterpret_cast< float* >( packet.buffer_ );
 					float y = *reinterpret_cast< float* >( packet.buffer_ + sizeof ( float ) );
 					player.entity_.SetPosition ( x , y );
+					player.interpolated_x = x;
+					player.interpolated_y = y;
+					player.m_player_non_cp_x = x;
+					player.m_player_non_cp_y = y;
 					mouse_data_.x_ = x;
 					mouse_data_.y_ = y;
 					break;
@@ -322,18 +329,31 @@ namespace DOTL
 			// do server reconciliation for player here
 			if ( entity->id_ == player_id_ )
 			{
-				// server reconciliation logic - for now no validation to sequence so it just 
-				// does not update the player data is the sequence number is outdated
-				if ( entity->sequence_ < game_data_.GetEntity ( player_id_ ).sequence_ )
+				if ( m_server_reconciliation )
 				{
-					// expected response from server
-					// do stuff with response, validation etc.
+					// server reconciliation logic - for now no validation to sequence so it just 
+					// does not update the player data is the sequence number is outdated
+					if ( entity->sequence_ < game_data_.GetEntity ( player_id_ ).sequence_ )
+					{
+						// expected response from server
+						// do stuff with response, validation etc.
 
-					// ...
+						// ...
+					}
+				}
+				else
+				{
+					game_data_.AddEntity ( *entity );
 				}
 
 				// sync health and other stuff
 				game_data_.GetEntity ( entity->id_ ).health_ = entity->health_;
+
+				if ( !m_client_side_prediction )
+				{
+					NetworkEntityExtended& player_extended = game_data_.GetEntityExtended ( entity->id_ );
+					game_data_.GetEntity ( entity->id_ ).SetPosition ( player_extended.m_player_non_cp_x , player_extended.m_player_non_cp_y );
+				}
 			}
 			else
 			{
@@ -346,6 +366,7 @@ namespace DOTL
 	{
 		// UPDATE PLAYER 
 		NetworkEntity& player = game_data_.GetEntity ( player_id_ );
+		NetworkEntityExtended& player_extended = game_data_.GetEntityExtended ( player_id_ );
 
 		player_attack_timer += static_cast< float >( dt );
 
@@ -361,8 +382,16 @@ namespace DOTL
 					entity.entity_.type_ != ET::BULLET )
 				{
 					// checks if within click
-					vx = entity.interpolated_x - mouse_data_.x_;
-					vy = entity.interpolated_y - mouse_data_.y_;
+					if ( m_entity_interpolation )
+					{
+						vx = entity.interpolated_x - mouse_data_.x_;
+						vy = entity.interpolated_y - mouse_data_.y_;
+					}
+					else
+					{
+						vx = entity.entity_.GetData ( ED::POS_X ) - mouse_data_.x_;
+						vy = entity.entity_.GetData ( ED::POS_Y ) - mouse_data_.y_;
+					}
 					length = sqrt ( vx * vx + vy * vy );
 
 					if ( length < mouse_data_.click_radius_ )
@@ -395,23 +424,33 @@ namespace DOTL
 				{
 					player_attack_timer = 0.0f;
 					// send a create bullet request to the server
-					NetworkSend ( 
+					NetworkSend (
 						clientSocket ,
-						NetworkPacket ( 
-							player.GetData ( ED::POS_X ) , 
-							player.GetData ( ED::POS_Y ) , 
-							target_id_ , 
-							player.team_1_ 
-						) 
+						NetworkPacket (
+							player.GetData ( ED::POS_X ) ,
+							player.GetData ( ED::POS_Y ) ,
+							target_id_ ,
+							player.team_1_
+						)
 					);
 				}
 			}
 
 			// update player movement
-			mouse_data_.x_ = player.GetData ( ED::POS_X );
-			mouse_data_.y_ = player.GetData ( ED::POS_Y );
-			player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) ,
-				player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
+			if ( m_client_side_prediction )
+			{
+				mouse_data_.x_ = player.GetData ( ED::POS_X );
+				mouse_data_.y_ = player.GetData ( ED::POS_Y );
+				player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) ,
+					player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
+			}
+			else
+			{
+				mouse_data_.x_ = player_extended.m_player_non_cp_x;
+				mouse_data_.y_ = player_extended.m_player_non_cp_y;
+				player_extended.m_player_non_cp_x = player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt );
+				player_extended.m_player_non_cp_y = player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt );
+			}
 		}
 		else
 		{
@@ -426,14 +465,48 @@ namespace DOTL
 
 			// move to mouse position
 			// calculate distance away
-			if ( length > game_data_.player_speed_ * dt * 0.5f )
+			if ( m_client_side_prediction && ( length > game_data_.player_speed_ * dt * 0.5f ) )
 			{
 				player.SetPosition ( player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt ) ,
 					player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt ) );
+			}
+			else
+			{
+				player_extended.m_player_non_cp_x = player.GetData ( ED::POS_X ) + player.GetData ( ED::VEL_X ) * static_cast< float >( dt );
+				player_extended.m_player_non_cp_y = player.GetData ( ED::POS_Y ) + player.GetData ( ED::VEL_Y ) * static_cast< float >( dt );
 			}
 		}
 
 		// increment update sequence to be used in server reconciliation
 		++player.sequence_;
+	}
+
+	void SFMLProcess::UpdateCheckboxes ( double dt )
+	{
+		if ( mouse_data_.pressed_ )
+		{
+			float mx = mouse_data_.x_ , my = mouse_data_.y_;
+			// client side prediction
+			float dx1 = mx - m_checkbox_x;
+			float dy1 = my - m_checkbox_y;
+			if ( abs ( dx1 ) < 24.0f && abs ( dy1 ) < 24.0f )
+			{
+				m_client_side_prediction = !m_client_side_prediction;
+			}
+			// server reconciliation
+			dx1 = mx - ( m_checkbox_x + m_checkbox_spacing );
+			dy1 = my - m_checkbox_y;
+			if ( abs ( dx1 ) < 24.0f && abs ( dy1 ) < 24.0f )
+			{
+				m_server_reconciliation = !m_server_reconciliation;
+			}
+			// client side prediction
+			dx1 = mx - ( m_checkbox_x + 2 * m_checkbox_spacing );
+			dy1 = my - m_checkbox_y;
+			if ( abs ( dx1 ) < 24.0f && abs ( dy1 ) < 24.0f )
+			{
+				m_entity_interpolation = !m_entity_interpolation;
+			}
+		}
 	}
 }

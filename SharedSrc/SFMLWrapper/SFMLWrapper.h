@@ -13,20 +13,20 @@ namespace DOTL
 {
 	struct MouseEventData
 	{
-		bool pressed_{ false };
-		float x_, y_;
-		float click_radius_{ 40.0f };
+		bool pressed_ { false };
+		float x_ , y_;
+		float click_radius_ { 40.0f };
 	};
 
 	struct SFMLSprite
 	{
-		SFMLSprite( char const* name );
+		SFMLSprite ( char const* name );
 
-		void SetPosition( float x, float y );
+		void SetPosition ( float x , float y );
 
-		void SetScale( float x, float y );
+		void SetScale ( float x , float y );
 
-		sf::Sprite& GetSprite();
+		sf::Sprite& GetSprite ();
 
 		//sf::Texture GetTexture();
 
@@ -37,32 +37,42 @@ namespace DOTL
 
 	struct SFMLInstance
 	{
-		SFMLInstance( int windowWidth, int windowHeight, char const* name );
+		SFMLInstance ( int windowWidth , int windowHeight , char const* name );
 
-		void PollMouseEvents( MouseEventData& med );
+		void PollMouseEvents ( MouseEventData& med );
 
-		void Update( GameData& data, float dt, uint16_t playerID, uint16_t targetID );
+		void Update ( GameData& data , float dt , uint16_t playerID , uint16_t targetID ,
+			float checkboxX , float checkboxY , float checkboxSpacing ,
+			bool clientSidePrediction = true , bool serverReconciliation = true , bool entityInterpolation = true );
 
-		void Draw();
+		void Draw ();
 
-		bool IsOpen();
+		bool IsOpen ();
 
 	private:
 		std::shared_ptr<sf::RenderWindow> window_;
 		sf::Font font_;
 		sf::Text text_;
 
-		SFMLSprite background_{ "Assets/Arts/Background_v1_20220403.png" };
-		SFMLSprite tower_pink_{ "Assets/Arts/Tower_Pink_v1_20220403.png" };
-		SFMLSprite tower_blue_{ "Assets/Arts/Tower_Blue_v1_20220403.png" };
-		SFMLSprite player_pink_{ "Assets/Arts/Player_Pink_v1_20220403.png" };
-		SFMLSprite player_blue_{ "Assets/Arts/Player_Blue_v1_20220403.png" };
-		SFMLSprite minion_pink_{ "Assets/Arts/Minion_Pink_v1_20220403.png" };
-		SFMLSprite minion_blue_{ "Assets/Arts/Minion_Blue_v1_20220403.png" };
-		SFMLSprite bullet_pink_{ "Assets/Arts/Bullet_Pink_v1_20220403.png" };
-		SFMLSprite bullet_blue_{ "Assets/Arts/Bullet_Blue_v1_20220403.png" };
+		SFMLSprite background_ { "Assets/Arts/Background_v1_20220403.png" };
+		SFMLSprite tower_pink_ { "Assets/Arts/Tower_Pink_v1_20220403.png" };
+		SFMLSprite tower_blue_ { "Assets/Arts/Tower_Blue_v1_20220403.png" };
+		SFMLSprite player_pink_ { "Assets/Arts/Player_Pink_v1_20220403.png" };
+		SFMLSprite player_blue_ { "Assets/Arts/Player_Blue_v1_20220403.png" };
+		SFMLSprite minion_pink_ { "Assets/Arts/Minion_Pink_v1_20220403.png" };
+		SFMLSprite minion_blue_ { "Assets/Arts/Minion_Blue_v1_20220403.png" };
+		SFMLSprite bullet_pink_ { "Assets/Arts/Bullet_Pink_v1_20220403.png" };
+		SFMLSprite bullet_blue_ { "Assets/Arts/Bullet_Blue_v1_20220403.png" };
 
-		static constexpr int font_size_{ 18 };
-		static constexpr int font_offset_{ 25 };
+		static constexpr int font_size_ { 18 };
+		static constexpr int font_offset_ { 25 };
+	};
+
+	struct Compare
+	{
+		bool operator() ( std::reference_wrapper<NetworkEntityExtended> lhs , std::reference_wrapper<NetworkEntityExtended> rhs )
+		{
+			return lhs.get ().sort_y < rhs.get ().sort_y;
+		}
 	};
 }

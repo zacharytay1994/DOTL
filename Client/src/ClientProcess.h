@@ -41,5 +41,13 @@ namespace DOTL
 
 		// player update code
 		void UpdateClient ( double dt , SOCKET clientSocket );
+
+		bool m_client_side_prediction { true };
+		bool m_server_reconciliation { true };
+		bool m_entity_interpolation { true };
+
+		float m_checkbox_x { 300.0f } , m_checkbox_y { 50.0f } , m_checkbox_spacing { 60.0f };
+
+		void UpdateCheckboxes ( double dt );
 	};
 }
