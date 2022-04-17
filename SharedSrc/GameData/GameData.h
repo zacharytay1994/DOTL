@@ -276,8 +276,6 @@ namespace DOTL
 		void UpdateServer ( float dt )
 		{
 			// Game entities logic update
-			float lerp_val = static_cast< float >( sync_delta_time_ > 1.0f ? 1.0f : sync_delta_time_ );
-			//float lerp_val = static_cast< float >( sync_delta_time_ ) * dt;
 			for ( auto& extended_entity : entities_ )
 			{
 				if ( extended_entity.entity_.active_ )
@@ -300,12 +298,6 @@ namespace DOTL
 					}
 
 					// calculate interpolated positions
-					//extended_entity.interpolated_x = my_lerp2 ( extended_entity.interpolated_x ,
-					//	extended_entity.entity_.GetData ( ED::POS_X ) , /*lerp_val * dt * 50*/ dt );
-
-					//extended_entity.interpolated_y = my_lerp2 ( extended_entity.interpolated_y , 
-					//	extended_entity.entity_.GetData ( ED::POS_Y ) , /*lerp_val * dt * 50*/ dt );
-
 					sf::Vector2f start { extended_entity.interpolated_x, extended_entity.interpolated_y };
 					sf::Vector2f end ( extended_entity.entity_.GetData ( ED::POS_X ) , extended_entity.entity_.GetData ( ED::POS_Y ) );
 

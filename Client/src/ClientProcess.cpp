@@ -483,6 +483,7 @@ namespace DOTL
 
 	void SFMLProcess::UpdateCheckboxes ( double dt )
 	{
+		( dt );
 		if ( mouse_data_.pressed_ )
 		{
 			float mx = mouse_data_.x_ , my = mouse_data_.y_;
